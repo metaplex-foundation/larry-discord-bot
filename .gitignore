@@ -1,2 +1,6 @@
-node_modules
+### Format1 ###
+node_modules/
 .env
+
+### Format2 ###
+**/node_modules/**
