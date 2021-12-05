@@ -1,3 +1,6 @@
+// Fix dotenv issue
+export {};
+
 // Require neccesary discord.js classes and dotenv
 const dotenv = require('dotenv').config();
 const { Client, Intents } = require('discord.js');
