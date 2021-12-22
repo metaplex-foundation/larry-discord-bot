@@ -13,6 +13,12 @@ module.exports = {
 				type: 3,
 				required: true,
 				autocomplete: true,
+			},
+			{
+				name: 'target',
+				description: 'User to mention',
+				type: 6,
+				required: false,
 			}
 		],
 	},

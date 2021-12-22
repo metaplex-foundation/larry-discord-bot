@@ -35,7 +35,10 @@ export async function getAlgoliaResponse(query: string, index: any, hits: number
     let result = await index.search(query, {
         attributesToRetrieve: ['type', 'hierarchy', 'url', 'hits', 'content'],
         hitsPerPage: hits,
-    }).catch((error: any) => { console.log(error) });
+    })
+        .catch((error: any) => {
+            console.error(error);
+        });
     if (!result.hits) return { responses: [], links: [] };
     let responses: ApplicationCommandOptionChoice[] = [];
     let links: string[] = [];
@@ -47,7 +50,7 @@ export async function getAlgoliaResponse(query: string, index: any, hits: number
             if (!choice) return { responses: [], links: [] };
             const length = choice.length;
             choice = choice.substring(0, Math.min(choice.length, 97));
-            if (length>97) choice = choice + '...';
+            if (length > 97) choice = choice + '...';
         } else {
             choice = result.hits[i]?.hierarchy[type];
         }
@@ -63,10 +66,16 @@ export async function getAlgoliaResponse(query: string, index: any, hits: number
 
 export async function algoliaResult(index: SearchIndex, interaction: Interaction) {
     if (!interaction.isCommand()) return;
-    await interaction.deferReply();
-    const query = interaction.options.get("query")?.value;
+    const query = interaction.options.getString("query");
+    const user = interaction.options.getUser("target");
+    await interaction.deferReply({ ephemeral: user ? true : false })
+        .catch((error: Error) => {
+            console.error('Error deferring reply: ', error);
+            return;
+        });
+
     if (typeof query !== 'string') {
-        const response = await interaction.editReply("Something went wrong");
+        const response = await interaction.editReply("Something went wrong")
         return;
     }
     const result = await getAlgoliaResponse(query, index, 1);

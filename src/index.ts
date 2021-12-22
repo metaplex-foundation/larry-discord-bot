@@ -37,6 +37,10 @@ client.once('ready', () => {
 	console.log('Ready!');
 });
 
+process.on('unhandledRejection', error => {
+	console.error('Unhandled promise rejection:', error);
+});
+
 client.login(process.env.DISCORD_TOKEN);
 
 client.on('interactionCreate', async (interaction: Interaction) => {
