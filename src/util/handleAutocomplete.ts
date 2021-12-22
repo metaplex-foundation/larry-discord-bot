@@ -68,7 +68,7 @@ export async function algoliaResult(index: SearchIndex, interaction: Interaction
     if (!interaction.isCommand()) return;
     const query = interaction.options.getString("query");
     const user = interaction.options.getUser("target");
-    await interaction.deferReply({ ephemeral: user ? true : false })
+    await interaction.deferReply({ ephemeral: user ? false : true })
         .catch((error: Error) => {
             console.error('Error deferring reply: ', error);
             return;
