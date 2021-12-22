@@ -1,5 +1,5 @@
-import { ApplicationCommand, CommandInteraction, Interaction } from "discord.js";
-import { getAlgoliaResponse, metaplexIndex } from "../util/handleAutocomplete";
+import { Interaction } from "discord.js";
+import { algoliaResult, metaplexIndex } from "../util/handleAutocomplete";
 
 module.exports = {
 	data: {
@@ -17,16 +17,6 @@ module.exports = {
 		],
 	},
 	async execute(interaction: Interaction) {
-		console.log("hi");
-		
-		if (!interaction.isCommand()) return;
-		await interaction.deferReply();
-		const query = interaction.options.get("query")?.value;
-		if (typeof query !== 'string') {
-			const response = await interaction.editReply("Something went wrong");
-			return;
-		}
-		const result = await getAlgoliaResponse(query,metaplexIndex);
-		const response = await interaction.editReply(`${result.responses[0]?.name}: *${result.links[0]}*`);
+		await algoliaResult(metaplexIndex, interaction);
 	}
 };

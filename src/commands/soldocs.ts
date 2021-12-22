@@ -1,4 +1,5 @@
 import { Interaction } from "discord.js";
+import { algoliaResult, solanaIndex } from "../util/handleAutocomplete";
 
 module.exports = {
 	data: {
@@ -16,6 +17,6 @@ module.exports = {
 		],
 	},
 	async execute(interaction: Interaction) {
-
+		await algoliaResult(solanaIndex,interaction);
 	}
 };
