@@ -89,7 +89,7 @@ export async function algoliaResult(
   const query = interaction.options.getString("query");
   const user = interaction.options.getUser("target");
   await interaction
-    .deferReply({ ephemeral: user ? false : true })
+    .deferReply()//{ ephemeral: user ? false : true })
     .catch((error: Error) => {
       console.error("Error deferring reply: ", error);
       return;
@@ -101,7 +101,7 @@ export async function algoliaResult(
   }
   const result = await getAlgoliaResponse(query, index, 1);
   const message =
-    (user ? `*Documentation suggestion for ${user}*\n` : "") +
-    `**${result.responses[0]?.name}:**\n*${result.links[0]}*`;
+    (user ? `*Documentation suggestion for ${user}*:\n` : "") +
+    `**${result.responses[0]?.name}**\n*${result.links[0]}*`;
   const response = await interaction.editReply(message);
 }
