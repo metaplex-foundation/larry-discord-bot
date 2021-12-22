@@ -20,6 +20,12 @@ module.exports = {
         type: 6,
         required: false,
       },
+	  {
+        name: "hidden",
+        description: "Only show the docs to you",
+        type: 5,
+        required: false,
+      },
     ],
   },
   async execute(interaction: Interaction) {
