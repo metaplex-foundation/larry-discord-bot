@@ -79,5 +79,6 @@ export async function algoliaResult(index: SearchIndex, interaction: Interaction
         return;
     }
     const result = await getAlgoliaResponse(query, index, 1);
-    const response = await interaction.editReply(`**${result.responses[0]?.name}:**\n*${result.links[0]}*`);
+    const message = (user?`*Documentation suggestion for ${user}*`:"") + `**${result.responses[0]?.name}:**\n*${result.links[0]}*`;
+    const response = await interaction.editReply(message);
 }
