@@ -33,7 +33,7 @@ export async function handleAutoComplete(interaction: AutocompleteInteraction) {
 
 export async function getAlgoliaResponse(query: string, index: any, hits: number = 10): Promise<AlgoliaResults> {
     let result = await index.search(query, {
-        attributesToRetrieve: ['type', 'hierarchy', 'url'],
+        attributesToRetrieve: ['type', 'hierarchy', 'url', 'hits', 'content'],
         hitsPerPage: hits,
     }).catch((error: any) => { console.log(error) });
     if (!result.hits) return { responses: [], links: [] };
@@ -41,7 +41,16 @@ export async function getAlgoliaResponse(query: string, index: any, hits: number
     let links: string[] = [];
     for (let i = 0; i < result.hits.length; i++) {
         const type: string = result.hits[i]?.type;
-        const choice: string = result.hits[i]?.hierarchy[type];
+        let choice = "";
+        if (type === "content") {
+            choice = result.hits[i]?.content;
+            if (!choice) return { responses: [], links: [] };
+            const length = choice.length;
+            choice = choice.substring(0, Math.min(choice.length, 97));
+            if (length>97) choice = choice + '...';
+        } else {
+            choice = result.hits[i]?.hierarchy[type];
+        }
         if (!choice || !type) {
             continue;
         }
@@ -61,5 +70,5 @@ export async function algoliaResult(index: SearchIndex, interaction: Interaction
         return;
     }
     const result = await getAlgoliaResponse(query, index, 1);
-    const response = await interaction.editReply(`${result.responses[0]?.name}: *${result.links[0]}*`);
+    const response = await interaction.editReply(`**${result.responses[0]?.name}:**\n*${result.links[0]}*`);
 }

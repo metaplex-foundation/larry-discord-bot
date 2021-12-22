@@ -9,7 +9,8 @@ const fs = require('fs');
 
 const token = process.env.DISCORD_TOKEN;
 const clientId = process.env.CLIENT_ID;
-const guildId = process.env.TEST_GUILD_ID;
+// const guildId = process.env.TEST_GUILD_ID;
+const guildId = process.env.GUILD_ID;
 
 
 const commands: JSON[] = [];
