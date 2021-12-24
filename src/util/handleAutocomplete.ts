@@ -140,7 +140,7 @@ export async function algoliaResult(
     }
     const lastOption = checkLastUserOptions(query, interaction.user.id);
     if (lastOption.isSame) {
-        const first = lastOption.results?.lvl0s[lastOption.index];
+        const first = lastOption.results?.responses[lastOption.index];
         const line2 = `**${first}**\n*${lastOption.link}*`;
         const message =
             (user ? `*Documentation suggestion for ${user}:*\n` : "") +
