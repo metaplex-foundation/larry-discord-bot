@@ -18,52 +18,52 @@ const fs = require("fs");
 
 // Create a new discord client
 const client = new Client({
-  intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MEMBERS],
+	intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MEMBERS],
 });
 
 client.commands = new Collection();
 
 const commandFiles = fs
-  .readdirSync("./commands")
-  .filter((file: string) => file.endsWith(".ts"));
+	.readdirSync("./commands")
+	.filter((file: string) => file.endsWith(".ts"));
 
 for (const file of commandFiles) {
-  const command = require(`./commands/${file}`);
-  // Set a new item in the Collection
-  // With the key as the command name and the value as the exported module
-  client.commands.set(command.data.name, command);
+	const command = require(`./commands/${file}`);
+	// Set a new item in the Collection
+	// With the key as the command name and the value as the exported module
+	client.commands.set(command.data.name, command);
 }
 
 // When the client is ready, run this code (only once)
 client.once("ready", () => {
-  console.log("Ready!");
+	console.log("Ready!");
 });
 
 process.on("unhandledRejection", (error) => {
-  console.error("Unhandled promise rejection:", error);
+	console.log("Unhandled promise rejection:", error);
 });
 
 client.login(process.env.DISCORD_TOKEN);
 
 client.on("interactionCreate", async (interaction: Interaction) => {
-  if (interaction.isAutocomplete()) {
-    await handleAutoComplete(interaction);
-    return;
-  }
+	if (interaction.isAutocomplete()) {
+		await handleAutoComplete(interaction);
+		return;
+	}
 
-  if (!interaction.isCommand()) return;
+	if (!interaction.isCommand()) return;
 
-  const command = client.commands.get(interaction.commandName);
+	const command = client.commands.get(interaction.commandName);
 
-  if (!command) return;
+	if (!command) return;
 
-  try {
-    await command.execute(interaction);
-  } catch (error) {
-    console.error(error);
-    await interaction.reply({
-      content: "There was an error while executing this command!",
-      ephemeral: true,
-    });
-  }
+	try {
+		await command.execute(interaction);
+	} catch (error) {
+		console.error(error);
+		await interaction.reply({
+			content: "There was an error while executing this command!",
+			ephemeral: true,
+		});
+	}
 });
