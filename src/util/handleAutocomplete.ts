@@ -43,11 +43,11 @@ export async function handleAutoComplete(interaction: AutocompleteInteraction) {
         if (focusedOption.name === "query") {
             const query = focusedOption.value;
             if (typeof query === "number") return;
-            if (query === "") {
-                lastUserOptions.delete(user.id);
-                // const response = await interaction.respond([]);
-                return;
-            }
+            // if (query === "") {
+            //     // lastUserOptions.delete(user.id);
+            //     const response = await interaction.respond([]);
+            //     return;
+            // }
             if (checkLastUserOptions(query, user.id).isSame) {
                 const result: ApplicationCommandOptionChoice = { name: query, value: query };
                 const response = await interaction.respond([result]);
@@ -120,7 +120,12 @@ export async function getAlgoliaResponse(
         links.push(result.hits[i]?.url);
         responses.push(choice);
         lvl0s.push(lvl0);
-        let message = `(${lvl0}) ${choice}`;
+        let message = "";
+        if (lvl0===""){
+            message = choice;
+        } else {
+            message = `(${lvl0}) ${choice}`;
+        }
         if (message.length > 100){
             message = message.substring(0,97) + "...";
         } 
