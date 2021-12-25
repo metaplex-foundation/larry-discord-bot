@@ -120,7 +120,11 @@ export async function getAlgoliaResponse(
         links.push(result.hits[i]?.url);
         responses.push(choice);
         lvl0s.push(lvl0);
-        combined.push(`(${lvl0}) ${choice}`);
+        let message = `(${lvl0}) ${choice}`;
+        if (message.length > 100){
+            message = message.substring(0,97) + "...";
+        } 
+        combined.push(message);
     }
     return { responses, lvl0s, links, combined };
 }
