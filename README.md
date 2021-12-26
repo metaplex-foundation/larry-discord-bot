@@ -1,4 +1,4 @@
-![Discord](https://img.shields.io/discord/848060988636921856?color=5865F2&logo=discord&logoColor=white) 
+<a href="https://discord.gg/metaplex"><img src="https://img.shields.io/discord/848060988636921856?color=5865F2&logo=discord&logoColor=white" alt="Discord server" /></a>
 # Larry the Metaplex Discord Bot 
 
 Larry is a suite of three separate bots with three independent functions.
