@@ -1,5 +1,5 @@
 import { Interaction } from 'discord.js';
-import { algoliaResult, metaplexIndex } from '../util/handle-autocomplete';
+import { algoliaResult, metaplexIndex } from '../helpers/handle-autocomplete';
 
 module.exports = {
     data: {

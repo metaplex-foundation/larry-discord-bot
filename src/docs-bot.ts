@@ -1,5 +1,5 @@
 import { Interaction } from 'discord.js';
-import { handleAutoComplete } from './util/handle-autocomplete';
+import { handleAutoComplete } from './helpers/handle-autocomplete';
 
 // Require neccesary discord.js classes and dotenv
 const dotenv = require('dotenv').config();
@@ -29,11 +29,11 @@ const client = new Client({
 client.commands = new Collection();
 
 const commandFiles = fs
-    .readdirSync('./commands')
+    .readdirSync('./docs-bot')
     .filter((file: string) => file.endsWith('.ts'));
 
 for (const file of commandFiles) {
-    const command = require(`./commands/${file}`);
+    const command = require(`./docs-bot/${file}`);
     // Set a new item in the Collection
     // With the key as the command name and the value as the exported module
     client.commands.set(command.data.name, command);

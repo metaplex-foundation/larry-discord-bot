@@ -1,5 +1,5 @@
 import { GuildMember, Interaction } from 'discord.js';
-import { handleOnJoin } from './util/on-join';
+import { handleOnJoin } from './helpers/on-join';
 
 // Require neccesary discord.js classes and dotenv
 require('dotenv').config();
@@ -25,11 +25,11 @@ const client = new Client({
 client.commands = new Collection();
 
 const commandFiles = fs
-    .readdirSync('./commands')
+    .readdirSync('./join-kick-bot')
     .filter((file: string) => file.endsWith('.ts'));
 
 for (const file of commandFiles) {
-    const command = require(`./commands/${file}`);
+    const command = require(`./join-kick-bot/${file}`);
     // Set a new item in the Collection
     // With the key as the command name and the value as the exported module
     client.commands.set(command.data.name, command);

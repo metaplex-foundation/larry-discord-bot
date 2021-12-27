@@ -1,5 +1,5 @@
 import { Interaction } from 'discord.js';
-import { algoliaResult, solanaIndex } from '../util/handle-autocomplete';
+import { algoliaResult, solanaIndex } from '../helpers/handle-autocomplete';
 
 module.exports = {
     data: {

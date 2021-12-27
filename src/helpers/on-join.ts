@@ -1,5 +1,5 @@
 import { Guild, GuildMember } from 'discord.js';
-import { COMMUNITY_DEV_ROLE_ID, METAPLEX_PHISHING_CHANNEL_ID, MODERATOR_ROLE_ID } from './constants';
+import { COMMUNITY_DEV_ROLE_ID, METAPLEX_PHISHING_CHANNEL_ID, MODERATOR_ROLE_ID } from '../util/constants';
 
 const guildToModMap = new Map<string, string[]>();
 

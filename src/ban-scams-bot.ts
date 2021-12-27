@@ -29,11 +29,11 @@ const client = new Client({
 client.commands = new Collection();
 
 const commandFiles = fs
-    .readdirSync('./commands')
+    .readdirSync('./ban-scams-bot')
     .filter((file: string) => file.endsWith('.ts'));
 
 for (const file of commandFiles) {
-    const command = require(`./commands/${file}`);
+    const command = require(`./ban-scams-bot/${file}`);
     // Set a new item in the Collection
     // With the key as the command name and the value as the exported module
     client.commands.set(command.data.name, command);
