@@ -1,4 +1,4 @@
-import { Interaction } from 'discord.js';
+import { CommandInteraction, Interaction } from 'discord.js';
 
 module.exports = {
     data: {
@@ -24,5 +24,5 @@ module.exports = {
             },
         ],
     },
-    async execute(interaction: Interaction) {},
+    async execute(interaction: CommandInteraction) {},
 };

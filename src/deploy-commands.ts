@@ -12,8 +12,8 @@ const ids = [process.env.DOCS_BOT_ID, process.env.BAN_SCAMS_BOT_ID, process.env.
 const commandFolders = ['docs-bot', 'ban-scams-bot', 'join-kick-bot'];
 
 
-const guildId = process.env.TEST_GUILD_ID;
-// const guildId = process.env.GUILD_ID;
+// const guildId = process.env.TEST_GUILD_ID;
+const guildId = "390628544369393664";//process.env.GUILD_ID;
 
 for (let i = 0; i < commandFolders.length; i++) {
     const commands: JSON[] = [];
@@ -29,5 +29,12 @@ for (let i = 0; i < commandFolders.length; i++) {
 
     rest.put(Routes.applicationGuildCommands(ids[i], guildId), { body: commands })
         .then(() => console.log('Successfully registered application commands.'))
-        .catch(console.error);
+        .catch((_: any) => console.error(ids[i]));
+
+    rest.put(
+        Routes.applicationCommands(ids[i]),
+        { body: commands },
+    )
+        .then(() => console.log('Successfully registered global application commands.'))
+        .catch((_: any) => console.error(`Global: ${ids[i]}`));
 }
