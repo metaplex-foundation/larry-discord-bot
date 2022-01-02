@@ -1,14 +1,14 @@
-require('dotenv').config();
 import algoliasearch, { SearchIndex } from 'algoliasearch';
 import {
     ApplicationCommandOptionChoice,
     AutocompleteInteraction,
     Interaction,
 } from 'discord.js';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const ALGOLIA_APP_METAPLEX = process.env.ALGOLIA_APP_METAPLEX ?? 'MISSING';
 const ALGOLIA_KEY_METAPLEX = process.env.ALGOLIA_KEY_METAPLEX ?? 'MISSING';
-
 const ALGOLIA_APP_SOLANA = process.env.ALGOLIA_APP_SOLANA ?? 'MISSING';
 const ALGOLIA_KEY_SOLANA = process.env.ALGOLIA_KEY_SOLANA ?? 'MISSING';
 
@@ -16,9 +16,9 @@ const metaplexClient = algoliasearch(
     ALGOLIA_APP_METAPLEX,
     ALGOLIA_KEY_METAPLEX
 );
-export const metaplexIndex = metaplexClient.initIndex('metaplex');
-
 const solanaClient = algoliasearch(ALGOLIA_APP_SOLANA, ALGOLIA_KEY_SOLANA);
+
+export const metaplexIndex = metaplexClient.initIndex('metaplex');
 export const solanaIndex = solanaClient.initIndex('solana');
 
 type AlgoliaResults = {
@@ -26,6 +26,13 @@ type AlgoliaResults = {
     lvl0s: string[];
     links: string[];
     combined: string[];
+};
+
+type LastUserOption = {
+    isSame: boolean;
+    link: string;
+    index: number;
+    results?: AlgoliaResults;
 };
 
 const COMMAND_TO_INDEX_MAP: any = {
@@ -38,8 +45,8 @@ const lastUserOptions = new Map<string, AlgoliaResults>();
 export async function handleAutoComplete(interaction: AutocompleteInteraction) {
     const commandName = interaction.commandName;
     const user = interaction.user;
-    if (lastUserOptions.size > 100){
-        for (const key in lastUserOptions.keys()){
+    if (lastUserOptions.size > 100) {
+        for (const key in lastUserOptions.keys()) {
             if (lastUserOptions.size <= 30) break;
             lastUserOptions.delete(key);
         }
@@ -51,10 +58,10 @@ export async function handleAutoComplete(interaction: AutocompleteInteraction) {
         if (focusedOption.name === 'query') {
             const query = focusedOption.value;
             if (typeof query === 'number') return;
-            if (query === "") {
+            if (query === '') {
                 lastUserOptions.delete(user.id);
-            //     const response = await interaction.respond([]);
-            //     return;
+                //     const response = await interaction.respond([]);
+                //     return;
             } else if (checkLastUserOptions(query, user.id).isSame) {
                 const result: ApplicationCommandOptionChoice = {
                     name: query,
@@ -81,12 +88,6 @@ export async function handleAutoComplete(interaction: AutocompleteInteraction) {
     }
 }
 
-type LastUserOption = {
-    isSame: boolean;
-    link: string;
-    index: number;
-    results?: AlgoliaResults;
-};
 function checkLastUserOptions(query: string, userId: string): LastUserOption {
     const lastUserOption = lastUserOptions.get(userId);
     if (lastUserOption) {
@@ -184,5 +185,4 @@ export async function algoliaResult(
         `**${result.responses[0]}**\n*${result.links[0]}*`;
     const response = await interaction.editReply(message);
     lastUserOptions.delete(interaction.user.id);
-
 }

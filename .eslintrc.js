@@ -8,6 +8,5 @@ module.exports = {
         'prettier',
     ],
     rules: {
-        '@typescript-eslint/no-var-requires': 'off',
     },
 };
