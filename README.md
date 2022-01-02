@@ -1,11 +1,23 @@
 <a href="https://discord.gg/metaplex"><img src="https://img.shields.io/discord/848060988636921856?color=5865F2&logo=discord&logoColor=white" alt="Discord server" /></a>
 # Larry the Metaplex Discord Bot 
 
-Larry is a suite of two separate bots:
-1. The docs bot
-2. The mod bot
-
-Larry splits these functions into two bots to both allow for more modularity and to improve each of the bots performance. 
+## Getting started: 
+1. Clone the repo and run `yarn install`
+    ```bash
+    $ git clone https://github.com/metaplex-foundation/larry-discord-bot.git
+    $ cd larry-discord-bot
+    $ yarn install
+    ```
+2. Duplicate the `.env.example` file and rename it `.env`
+3. Fill in the placeholders in the `.env` file with your credentials
+4. To run the Docs Bot
+    ```bash
+    $ yarn run docs-bot
+    ```
+5. To run the Mod Bot:
+    ```bash
+    $ yarn run mod-bot
+    ```
 
 ---
 ## The Docs Bot: 
