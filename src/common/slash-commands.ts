@@ -4,6 +4,7 @@ import {
     Collection,
     CommandInteraction,
     Guild,
+    OAuth2Guild,
 } from 'discord.js';
 import { CommandObject } from '../types';
 import log from 'loglevel';
@@ -86,13 +87,16 @@ export async function updateCommandPermissions(
     guild: Guild,
     remove = false
 ) {
+    log.info('here2');
     const commands = await guild.commands.fetch();
+    log.info('there2');
     if (commands !== undefined) {
         if (remove) {
             for (const [, command] of commands) {
                 ids.userIds = ids.userIds.filter(
                     (userId: string) => userId !== BOT_MASTER_ID
                 );
+                log.info(ids);
                 await command.permissions.remove({
                     users: ids.userIds,
                     roles: ids.roleIds,
@@ -100,6 +104,7 @@ export async function updateCommandPermissions(
             }
         } else {
             const permissions = userRoleGroupToData(ids);
+            log.info(ids);
             for (const [, command] of commands) {
                 await command.permissions.add({ permissions });
             }
@@ -131,24 +136,37 @@ export async function setupCommands(
     log.debug(`Fetched ${partialGuilds.size} partial guilds.`);
     const guilds: Guild[] = [];
     for (const [, guild] of partialGuilds) {
-        const fetchedGuild = await guild.fetch();
-        log.debug(`Fetched ${fetchedGuild.name}.`);
-        guilds.push(fetchedGuild);
-        let targetGuild = await GuildModel.findOne({ guildId: guild.id });
-        if (!targetGuild) {
-            targetGuild = await GuildModel.create({
-                guildId: guild.id,
-                moderators: {
-                    roleIds: [],
-                    userIds: [BOT_MASTER_ID],
-                },
-            });
-        }
-        const moderators = targetGuild.moderators;
-        await setGuildCommands(slashCommands, fetchedGuild, moderators);
+        const newGuild = await setupGuild(guild, slashCommands);
+        guilds.push(newGuild);
     }
     const commands = getCommands(slashCommands);
     return { guilds, commands };
+}
+
+export async function setupGuild(
+    guild: OAuth2Guild | Guild,
+    slashCommands: CommandObject[]
+) {
+    let fetchedGuild: Guild;
+    if (guild instanceof OAuth2Guild) {
+        fetchedGuild = await guild.fetch();
+    } else {
+        fetchedGuild = guild;
+    }
+    log.debug(`Fetched ${fetchedGuild.name}.`);
+    let targetGuild = await GuildModel.findOne({ guildId: guild.id });
+    if (!targetGuild) {
+        targetGuild = await GuildModel.create({
+            guildId: guild.id,
+            moderators: {
+                roleIds: [],
+                userIds: [BOT_MASTER_ID],
+            },
+        });
+    }
+    const moderators = targetGuild.moderators;
+    await setGuildCommands(slashCommands, fetchedGuild, moderators);
+    return fetchedGuild;
 }
 
 export function interactionToUserRoleGroup(
@@ -157,6 +175,7 @@ export function interactionToUserRoleGroup(
     const options = interaction.options;
     const user = options.getUser('user')?.id;
     const role = options.getRole('role')?.id;
+    log.info(role);
     return {
         roleIds: role ? [role] : [],
         userIds: user ? [user] : [],

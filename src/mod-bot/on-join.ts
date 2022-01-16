@@ -1,8 +1,11 @@
 import { Guild, GuildMember } from 'discord.js';
+import log from 'loglevel';
+import { BOT_MASTER_ID } from '../common/constants';
 import { findOrCreateModel, UserRoleGroup } from './mod-mongo-model';
 
-const guildToCache = new Map<string, MongoCache>();
-
+export const guildToCache = new Map<string, MongoCache>();
+export const timestampToJoins = new Map<number, GuildMember[]>();
+export let activeRaid = false;
 class MongoCache {
     logChannelId: string | undefined;
     joinCheckNames!: string[];
@@ -20,24 +23,18 @@ class MongoCache {
         this.updateJoinCheckNames(joinCheck, guild);
     }
 
-    updateJoinCheckNames(
-        ids: UserRoleGroup | undefined,
-        guild: Guild
-    ): this is { logChannelId: string; spamTolerance: number } {
+    async updateJoinCheckNames(ids: UserRoleGroup | undefined, guild: Guild) {
         if (typeof ids === 'undefined') {
             this.joinCheckNames = [];
         } else {
             const names: string[] = [];
-            const roles = ids.roleIds.map((id) => guild.roles.resolve(id));
-            for (const role of roles) {
-                if (role !== null) {
-                    names.concat(
-                        role.members.map((member) =>
-                            member.user.username.toLowerCase()
-                        )
-                    );
+            const roles = ids.roleIds;
+            const guildMembers = await guild.members.fetch();
+            guildMembers.forEach((member) => {
+                if (member.roles.cache.hasAny(...roles)) {
+                    names.push(member.user.username.toLowerCase());
                 }
-            }
+            });
             const members = ids.userIds.map((id) => guild.members.resolve(id));
             for (const member of members) {
                 if (member !== null)
@@ -45,6 +42,8 @@ class MongoCache {
             }
             this.joinCheckNames = names;
         }
+        log.info('updated joincheck names');
+        log.info(this.joinCheckNames);
         return this.checkSetup();
     }
 
@@ -52,6 +51,7 @@ class MongoCache {
         id: string
     ): this is { logChannelId: string; spamTolerance: number } {
         this.logChannelId = id;
+        log.info('updated cached log channel id');
         return this.isSetup;
     }
 
@@ -59,6 +59,7 @@ class MongoCache {
         tolerance: number
     ): this is { logChannelId: string; spamTolerance: number } {
         this.spamTolerance = tolerance;
+        log.info('updated cached spam tolerance');
         return this.isSetup;
     }
 
@@ -81,14 +82,59 @@ export async function handleOnJoin(guildMember: GuildMember) {
     if (
         cache.joinCheckNames.includes(guildMember.user.username.toLowerCase())
     ) {
+        const dmChannel = await guildMember.createDM();
+        await dmChannel.send(
+            'You have an identical username to a moderator. Please change your username and try again.'
+        );
         await guildMember.kick('User has identical username to a moderator.');
         const logChannel = guildMember.guild.channels.resolve(
             cache.logChannelId
         );
         if (logChannel?.isText()) {
             logChannel.send(
-                `${guildMember.user.tag} *(${guildMember.id})* tried to join the server and was successfully kicked.`
+                `${guildMember.user.tag} **(${guildMember.id})** tried to join the server and was successfully kicked.`
             );
+        }
+    } else {
+        const joinedTimestamp = guildMember.joinedTimestamp;
+        if (joinedTimestamp === null) return;
+        const timestamp = Math.floor(joinedTimestamp / 100000);
+        const members = timestampToJoins.get(timestamp);
+        if (members === undefined) {
+            timestampToJoins.clear();
+            timestampToJoins.set(timestamp, [guildMember]);
+        } else {
+            members.push(guildMember);
+            if (members.length >= cache.spamTolerance && !activeRaid) {
+                activeRaid = true;
+                guild
+                    .setVerificationLevel('MEDIUM', 'Raid timer has ended')
+                    .then(() =>
+                        log.info(
+                            `Updated guild verification level to ${guild.verificationLevel}`
+                        )
+                    );
+                setTimeout(async () => {
+                    activeRaid = false;
+                    await guild.setVerificationLevel(
+                        'MEDIUM',
+                        'Raid timer has ended'
+                    );
+                    log.info(
+                        `Updated guild verification level to ${guild.verificationLevel}`
+                    );
+                }, 1000 * 60 * 10);
+
+                const logChannel = guildMember.guild.channels.resolve(
+                    cache.logChannelId
+                );
+
+                if (logChannel?.isText()) {
+                    logChannel.send(
+                        `<@${BOT_MASTER_ID}> \n**ALERT: likely raid is happening!**`
+                    );
+                }
+            }
         }
     }
 }
@@ -128,7 +174,8 @@ export async function setCache(guild: Guild) {
         model.joinCheck,
         guild
     );
-    newCache.updateJoinCheckNames(model.joinCheck, guild);
+    await newCache.updateJoinCheckNames(model.joinCheck, guild);
+    newCache.checkSetup();
     guildToCache.set(guild.id, newCache);
     return newCache;
 }

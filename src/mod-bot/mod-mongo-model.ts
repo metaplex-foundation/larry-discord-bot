@@ -1,9 +1,14 @@
-import { Guild } from 'discord.js';
+import { CommandInteraction, Guild } from 'discord.js';
 import log from 'loglevel';
 log.setDefaultLevel;
 import { model, Schema } from 'mongoose';
 import { BOT_MASTER_ID } from '../common/constants';
 import { updateCommandPermissions } from '../common/slash-commands';
+import {
+    updateCachedJoinCheck,
+    updateCachedLogChannel,
+    updateCachedSpamTolerance,
+} from './on-join';
 
 export type UserRoleGroup = {
     roleIds: string[];
@@ -47,47 +52,55 @@ export function updateMongoPermissions(
         addBotMaster(target.userIds);
     } else {
         if (remove) {
-            target.roleIds = target.roleIds.filter(
+            target.roleIds = target.roleIds?.filter(
                 (roleId: string) => !toModify.roleIds.includes(roleId)
             );
-            target.userIds = target.userIds.filter(
+            target.userIds = target.userIds?.filter(
                 (userId: string) => !toModify.userIds.includes(userId)
             );
             addBotMaster(target.userIds);
         } else {
-            target.roleIds = target.roleIds.concat(toModify.roleIds);
-            target.userIds = target.userIds.concat(toModify.userIds);
+            for (const roleId of toModify.roleIds) {
+                if (!target.roleIds.includes(roleId)) {
+                    log.info;
+                    target.roleIds.push(roleId);
+                }
+            }
+            for (const userId of toModify.userIds) {
+                if (!target.userIds.includes(userId)) {
+                    target.userIds.push(userId);
+                }
+            }
         }
     }
 }
 
 export function addBotMaster(ids: string[]) {
-    if (ids.includes(BOT_MASTER_ID)) {
+    if (!ids.includes(BOT_MASTER_ID)) {
         ids.push(BOT_MASTER_ID);
     }
-    return ids;
 }
 
 export async function updateMods(
-    guild: Guild,
+    interaction: CommandInteraction<'cached'>,
     toModify: UserRoleGroup,
     remove = false
 ) {
-    let targetGuild = await GuildModel.findOne({ guildId: guild.id });
-    if (!targetGuild) {
-        targetGuild = await GuildModel.create({
-            guildId: guild.id,
-            moderators: {
-                roleIds: [],
-                userIds: [BOT_MASTER_ID],
-            },
-        });
+    const guild = interaction.guild;
+    const targetGuild = await findOrCreateModel(guild);
+    const mods = targetGuild.moderators;
+    if (!remove && mods) {
+        if (mods.roleIds.length + mods.userIds.length > 10) {
+            throw new RangeError('Too many overrides');
+        }
     }
+
     updateMongoPermissions(targetGuild.moderators, toModify, remove);
     targetGuild.markModified('moderators');
     await targetGuild.save();
+    log.info('aaaa');
     if (targetGuild.moderators === undefined) return;
-    await updateCommandPermissions(targetGuild.moderators, guild, true);
+    await updateCommandPermissions(targetGuild.moderators, guild, remove);
 }
 
 export async function updateJoinCheck(
@@ -99,8 +112,8 @@ export async function updateJoinCheck(
     updateMongoPermissions(targetGuild.joinCheck, toModify, remove);
     targetGuild.markModified('joinCheck');
     await targetGuild.save();
-    if (targetGuild.joinCheck === undefined) return;
-    await updateCommandPermissions(targetGuild.joinCheck, guild, true);
+    if (targetGuild.joinCheck)
+        await updateCachedJoinCheck(guild, targetGuild.joinCheck);
 }
 
 export async function resetMongoModel(guild: Guild) {
@@ -148,6 +161,8 @@ export async function setMongoLogChannel(guild: Guild, channelId: string) {
     targetGuild.logChannelId = channelId;
     targetGuild.markModified('logChannelId');
     await targetGuild.save();
+    if (targetGuild.logChannelId)
+        await updateCachedLogChannel(guild, targetGuild.logChannelId);
 }
 
 export async function setMongoVerifiedRole(
@@ -168,6 +183,8 @@ export async function setMongoSpamTolerance(
     targetGuild.spamTolerance = spamTolerance;
     targetGuild.markModified('spamTolerance');
     await targetGuild.save();
+    if (targetGuild.spamTolerance)
+        await updateCachedSpamTolerance(guild, targetGuild.spamTolerance);
 }
 
 export const GuildModel = model<GuildInterface>('guildschema', GuildSchema);

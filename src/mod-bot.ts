@@ -1,5 +1,9 @@
-import { GuildMember, Interaction } from 'discord.js';
-import { setupCommands } from './common/slash-commands';
+import { Guild, GuildMember, Interaction } from 'discord.js';
+import {
+    getCommands,
+    setupCommands,
+    setupGuild,
+} from './common/slash-commands';
 import { handleOnJoin } from './mod-bot/on-join';
 import { Client, Intents } from 'discord.js';
 import modCommands from './mod-bot/commands';
@@ -35,16 +39,19 @@ client.once('ready', async () => {
 async function main() {
     if (!client.isReady()) return;
 
-    const { guilds, commands } = await setupCommands(client, modCommands);
-    // const commands = getCommands(modCommands);
+    // const { guilds, commands } = await setupCommands(client, modCommands);
+    const commands = getCommands(modCommands);
     // return;
     client.on('interactionCreate', async (interaction: Interaction) => {
         if (!interaction.isCommand()) return;
         log.debug('Command Name: ', interaction.commandName);
         const theCommand = commands.get(interaction.commandName);
-
         if (!theCommand) return;
 
+        if (!interaction.inCachedGuild()) {
+            log.info('cry');
+            return;
+        }
         try {
             await theCommand.execute(interaction);
         } catch (error) {
@@ -58,5 +65,10 @@ async function main() {
 
     client.on('guildMemberAdd', async (guildMember: GuildMember) => {
         await handleOnJoin(guildMember);
+    });
+
+    client.on('guildCreate', async (guild: Guild) => {
+        await setupGuild(guild, modCommands);
+        log.info('Successfully setup new guild: ', guild.name);
     });
 }

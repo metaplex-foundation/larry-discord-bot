@@ -48,7 +48,7 @@ const slashCommands: CommandObject[] = [
                 },
             ],
         },
-        async execute(interaction: CommandInteraction<'present'>) {
+        async execute(interaction: CommandInteraction<'cached'>) {
             log.info('emptytrash');
         },
         permissions: {
@@ -61,7 +61,7 @@ const slashCommands: CommandObject[] = [
             name: 'kicksimilarjoin',
             defaultPermission: false,
         },
-        async execute(interaction: CommandInteraction<'present'>) {
+        async execute(interaction: CommandInteraction<'cached'>) {
             log.info('kicksimilarjoin');
         },
         permissions: {
@@ -74,7 +74,7 @@ const slashCommands: CommandObject[] = [
             name: 'bansimilarjoin',
             defaultPermission: false,
         },
-        async execute(interaction: CommandInteraction<'present'>) {
+        async execute(interaction: CommandInteraction<'cached'>) {
             log.info('bansimilarjoin');
         },
         permissions: {
@@ -87,8 +87,7 @@ const slashCommands: CommandObject[] = [
             description: 'Bot spam? Not for long',
             defaultPermission: false,
         },
-        async execute(interaction: CommandInteraction<'present'>) {
-            log.debug('addjoincheck');
+        async execute(interaction: CommandInteraction<'cached'>) {
             await handleCheckSpam(interaction);
         },
         permissions: { modOnly: true },
@@ -113,8 +112,7 @@ const slashCommands: CommandObject[] = [
                 },
             ],
         },
-        async execute(interaction: CommandInteraction<'present'>) {
-            log.debug('addjoincheck');
+        async execute(interaction: CommandInteraction<'cached'>) {
             await handleAddJoinCheck(interaction);
         },
         permissions: { modOnly: true },
@@ -139,8 +137,7 @@ const slashCommands: CommandObject[] = [
                 },
             ],
         },
-        async execute(interaction: CommandInteraction<'present'>) {
-            log.debug('addmod');
+        async execute(interaction: CommandInteraction<'cached'>) {
             await handleAddMod(interaction);
         },
         permissions: { modOnly: true },
@@ -165,8 +162,7 @@ const slashCommands: CommandObject[] = [
                 },
             ],
         },
-        async execute(interaction: CommandInteraction<'present'>) {
-            log.debug('removemod');
+        async execute(interaction: CommandInteraction<'cached'>) {
             await handleRemoveMod(interaction);
         },
         permissions: { modOnly: true },
@@ -191,8 +187,7 @@ const slashCommands: CommandObject[] = [
                 },
             ],
         },
-        async execute(interaction: CommandInteraction<'present'>) {
-            log.debug('removejoincheck');
+        async execute(interaction: CommandInteraction<'cached'>) {
             await handleRemoveJoinCheck(interaction);
         },
         permissions: { modOnly: true },
@@ -201,13 +196,12 @@ const slashCommands: CommandObject[] = [
         data: {
             name: 'logpermissions',
             description: 'Logs the current mod and joincheck permissions',
-            defaultPermission: true,
+            defaultPermission: false,
         },
-        async execute(interaction: CommandInteraction<'present'>) {
-            log.debug('logpermissions');
+        async execute(interaction: CommandInteraction<'cached'>) {
             await handleLogPermissions(interaction);
         },
-        permissions: { modOnly: false },
+        permissions: { modOnly: true },
     },
     {
         data: {
@@ -215,8 +209,7 @@ const slashCommands: CommandObject[] = [
             description: 'Resets the Angry Larry permissions for the guild',
             defaultPermission: false,
         },
-        async execute(interaction: CommandInteraction<'present'>) {
-            log.debug('resetpermissions');
+        async execute(interaction: CommandInteraction<'cached'>) {
             await handleResetPermissions(interaction);
         },
         permissions: { modOnly: true },
@@ -227,8 +220,7 @@ const slashCommands: CommandObject[] = [
             description: 'Resets the state for the guild',
             defaultPermission: false,
         },
-        async execute(interaction: CommandInteraction<'present'>) {
-            log.debug('reset');
+        async execute(interaction: CommandInteraction<'cached'>) {
             await handleReset(interaction);
         },
         permissions: { modOnly: true },
@@ -248,8 +240,7 @@ const slashCommands: CommandObject[] = [
                 },
             ],
         },
-        async execute(interaction: CommandInteraction<'present'>) {
-            log.debug('setlogchannel');
+        async execute(interaction: CommandInteraction<'cached'>) {
             await handleSetLogChannel(interaction);
         },
         permissions: { modOnly: true },
@@ -268,8 +259,7 @@ const slashCommands: CommandObject[] = [
                 },
             ],
         },
-        async execute(interaction: CommandInteraction<'present'>) {
-            log.debug('setverifiedrole');
+        async execute(interaction: CommandInteraction<'cached'>) {
             await handleSetVerifiedRole(interaction);
         },
         permissions: { modOnly: true },
@@ -289,8 +279,7 @@ const slashCommands: CommandObject[] = [
                 },
             ],
         },
-        async execute(interaction: CommandInteraction<'present'>) {
-            log.debug('setverifiedrole');
+        async execute(interaction: CommandInteraction<'cached'>) {
             await handleSetSpamTolerance(interaction);
         },
         permissions: { modOnly: true },
