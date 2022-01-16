@@ -1,6 +1,6 @@
 import { handleAutoComplete } from './docs-bot/handle-autocomplete';
-import { Guild, Interaction, Client, Intents } from 'discord.js';
-import { getCommands, setupCommands } from './common/slashCommands';
+import { Interaction, Client, Intents } from 'discord.js';
+import { getCommands, setupCommands } from './common/slash-commands';
 import docsCommands from './docs-bot/commands';
 import log from 'loglevel';
 import dotenv from 'dotenv';

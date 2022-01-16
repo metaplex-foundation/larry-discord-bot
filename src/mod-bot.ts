@@ -1,13 +1,14 @@
 import { GuildMember, Interaction } from 'discord.js';
-import { getCommands, setupCommands } from './common/slashCommands';
+import { setupCommands } from './common/slash-commands';
 import { handleOnJoin } from './mod-bot/on-join';
 import { Client, Intents } from 'discord.js';
 import modCommands from './mod-bot/commands';
 import log from 'loglevel';
 import dotenv from 'dotenv';
+import { connectDatabase } from './common/connect-db';
 dotenv.config();
 
-log.setLevel(log.levels.INFO);
+log.setLevel(log.levels.DEBUG);
 
 process.on('unhandledRejection', (error) => {
     log.error('Unhandled promise rejection:', error);
@@ -23,13 +24,20 @@ client.login(process.env.MOD_BOT_TOKEN);
 // When the client is ready, run this code (only once)
 client.once('ready', async () => {
     log.info('Ready!');
+    const mongoUri = process.env.MOD_BOT_MONGO_URI;
+    if (mongoUri === undefined) {
+        throw new Error('Bad mongo env');
+    }
+    await connectDatabase(mongoUri);
     await main();
 });
 
 async function main() {
     if (!client.isReady()) return;
-    // const { guilds, commands } = await setupCommands(client, modCommands);
-    const commands = getCommands(modCommands);
+
+    const { guilds, commands } = await setupCommands(client, modCommands);
+    // const commands = getCommands(modCommands);
+    // return;
     client.on('interactionCreate', async (interaction: Interaction) => {
         if (!interaction.isCommand()) return;
         log.debug('Command Name: ', interaction.commandName);

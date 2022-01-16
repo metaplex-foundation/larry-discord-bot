@@ -6,7 +6,7 @@ import {
     MessagePayload,
 } from 'discord.js';
 import log from 'loglevel';
-import { VERIFIED_ROLE_ID } from '../common/constants';
+import { findOrCreateModel } from './mod-mongo-model';
 
 type NeededInfo = {
     tag: string;
@@ -18,7 +18,7 @@ interface InfoObject {
     [propName: number]: NeededInfo[];
 }
 
-export async function handleCheckScams(interaction: CommandInteraction) {
+export async function handleCheckSpam(interaction: CommandInteraction) {
     const guild = await interaction.guild?.fetch();
     if (guild === undefined) {
         interaction.reply({
@@ -31,11 +31,14 @@ export async function handleCheckScams(interaction: CommandInteraction) {
 
     const guildMembers = await guild.members.fetch();
     log.info(guildMembers.size);
-    const verifedRoleIds = [VERIFIED_ROLE_ID];
+    const model = await findOrCreateModel(guild);
+    const verifiedRoleId = model.verifiedRoleId ?? null;
+    const spamTolerance = model.spamTolerance ?? 3;
+
     const { infoObj, totalSus } = getQuestionableMembers(
         guildMembers,
-        verifedRoleIds,
-        3
+        verifiedRoleId,
+        spamTolerance
     );
     const file = await makeResultsFile(infoObj);
     interaction.editReply({
@@ -46,15 +49,17 @@ export async function handleCheckScams(interaction: CommandInteraction) {
 
 function getQuestionableMembers(
     guildMembers: Collection<string, GuildMember>,
-    verifedRoleIds: string[],
+    verifedRoleId: string | null,
     joinNumber: number
 ) {
     const joinMap = new Map<number, GuildMember[]>();
     const resultsMap = new Map<number, NeededInfo[]>();
     let totalSus = 0;
     for (const member of guildMembers.values()) {
-        if (member.roles.cache.hasAny(...verifedRoleIds)) {
-            continue;
+        if (verifedRoleId !== null) {
+            if (member.roles.cache.hasAny(...[verifedRoleId])) {
+                continue;
+            }
         }
         const timestamp = Math.floor((member.joinedTimestamp ?? 0) / 100000);
         const entry = joinMap.get(timestamp);

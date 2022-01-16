@@ -1,7 +1,19 @@
 import { CommandInteraction } from 'discord.js';
 import log from 'loglevel';
 import { CommandObject } from '../types';
-import { handleCheckScams } from './ban-scams';
+import { handleCheckSpam } from './ban-scams';
+import {
+    handleAddJoinCheck,
+    handleAddMod,
+    handleLogPermissions,
+    handleRemoveJoinCheck,
+    handleRemoveMod,
+    handleReset,
+    handleResetPermissions,
+    handleSetLogChannel,
+    handleSetSpamTolerance,
+    handleSetVerifiedRole,
+} from './change-state';
 
 const slashCommands: CommandObject[] = [
     {
@@ -26,10 +38,44 @@ const slashCommands: CommandObject[] = [
                         { name: 'kick', value: 'kick' },
                     ],
                 },
+                {
+                    name: 'joinrange',
+                    description: 'Time window to use in minutes',
+                    type: 4,
+                    required: false,
+                    min_value: 1,
+                    max_value: 60,
+                },
             ],
         },
         async execute(interaction: CommandInteraction<'present'>) {
             log.info('emptytrash');
+        },
+        permissions: {
+            modOnly: true,
+        },
+    },
+    {
+        data: {
+            type: 2,
+            name: 'kicksimilarjoin',
+            defaultPermission: false,
+        },
+        async execute(interaction: CommandInteraction<'present'>) {
+            log.info('kicksimilarjoin');
+        },
+        permissions: {
+            modOnly: true,
+        },
+    },
+    {
+        data: {
+            type: 2,
+            name: 'bansimilarjoin',
+            defaultPermission: false,
+        },
+        async execute(interaction: CommandInteraction<'present'>) {
+            log.info('bansimilarjoin');
         },
         permissions: {
             modOnly: true,
@@ -42,26 +88,210 @@ const slashCommands: CommandObject[] = [
             defaultPermission: false,
         },
         async execute(interaction: CommandInteraction<'present'>) {
-            await handleCheckScams(interaction);
+            log.debug('addjoincheck');
+            await handleCheckSpam(interaction);
         },
         permissions: { modOnly: true },
     },
     {
         data: {
             name: 'addjoincheck',
-            description: 'Adds a member to the join check',
+            description: 'Adds a user or a role to the join check',
             defaultPermission: false,
             options: [
                 {
                     name: 'user',
-                    description: 'The user to protect',
+                    description: 'The user to add',
                     type: 6,
+                    required: false,
+                },
+                {
+                    name: 'role',
+                    description: 'The role to add',
+                    type: 8,
+                    required: false,
+                },
+            ],
+        },
+        async execute(interaction: CommandInteraction<'present'>) {
+            log.debug('addjoincheck');
+            await handleAddJoinCheck(interaction);
+        },
+        permissions: { modOnly: true },
+    },
+    {
+        data: {
+            name: 'addmod',
+            description: 'Adds a user or a role to the moderator set',
+            defaultPermission: false,
+            options: [
+                {
+                    name: 'user',
+                    description: 'The user to add',
+                    type: 6,
+                    required: false,
+                },
+                {
+                    name: 'role',
+                    description: 'The role to add',
+                    type: 8,
+                    required: false,
+                },
+            ],
+        },
+        async execute(interaction: CommandInteraction<'present'>) {
+            log.debug('addmod');
+            await handleAddMod(interaction);
+        },
+        permissions: { modOnly: true },
+    },
+    {
+        data: {
+            name: 'removemod',
+            description: 'Removes a user or a role from the moderator set',
+            defaultPermission: false,
+            options: [
+                {
+                    name: 'user',
+                    description: 'The user to remove',
+                    type: 6,
+                    required: false,
+                },
+                {
+                    name: 'role',
+                    description: 'The role to remove',
+                    type: 8,
+                    required: false,
+                },
+            ],
+        },
+        async execute(interaction: CommandInteraction<'present'>) {
+            log.debug('removemod');
+            await handleRemoveMod(interaction);
+        },
+        permissions: { modOnly: true },
+    },
+    {
+        data: {
+            name: 'removejoincheck',
+            description: 'Removes a user or a role from the join check',
+            defaultPermission: false,
+            options: [
+                {
+                    name: 'user',
+                    description: 'The user to remove',
+                    type: 6,
+                    required: false,
+                },
+                {
+                    name: 'role',
+                    description: 'The role to remove',
+                    type: 8,
+                    required: false,
+                },
+            ],
+        },
+        async execute(interaction: CommandInteraction<'present'>) {
+            log.debug('removejoincheck');
+            await handleRemoveJoinCheck(interaction);
+        },
+        permissions: { modOnly: true },
+    },
+    {
+        data: {
+            name: 'logpermissions',
+            description: 'Logs the current mod and joincheck permissions',
+            defaultPermission: true,
+        },
+        async execute(interaction: CommandInteraction<'present'>) {
+            log.debug('logpermissions');
+            await handleLogPermissions(interaction);
+        },
+        permissions: { modOnly: false },
+    },
+    {
+        data: {
+            name: 'resetpermissions',
+            description: 'Resets the Angry Larry permissions for the guild',
+            defaultPermission: false,
+        },
+        async execute(interaction: CommandInteraction<'present'>) {
+            log.debug('resetpermissions');
+            await handleResetPermissions(interaction);
+        },
+        permissions: { modOnly: true },
+    },
+    {
+        data: {
+            name: 'reset',
+            description: 'Resets the state for the guild',
+            defaultPermission: false,
+        },
+        async execute(interaction: CommandInteraction<'present'>) {
+            log.debug('reset');
+            await handleReset(interaction);
+        },
+        permissions: { modOnly: true },
+    },
+    {
+        data: {
+            name: 'setlogchannel',
+            description: 'Sets the join spam log channel for the guild',
+            defaultPermission: false,
+            options: [
+                {
+                    name: 'channel',
+                    description: 'The channel to set',
+                    type: 7,
+                    required: true,
+                    channel_types: [0],
+                },
+            ],
+        },
+        async execute(interaction: CommandInteraction<'present'>) {
+            log.debug('setlogchannel');
+            await handleSetLogChannel(interaction);
+        },
+        permissions: { modOnly: true },
+    },
+    {
+        data: {
+            name: 'setverifiedrole',
+            description: 'Sets the verified role for the guild',
+            defaultPermission: false,
+            options: [
+                {
+                    name: 'role',
+                    description: 'The role to set',
+                    type: 8,
                     required: true,
                 },
             ],
         },
         async execute(interaction: CommandInteraction<'present'>) {
-            log.info('addjoincheck');
+            log.debug('setverifiedrole');
+            await handleSetVerifiedRole(interaction);
+        },
+        permissions: { modOnly: true },
+    },
+    {
+        data: {
+            name: 'setspamtolerance',
+            description: 'Sets the spam tolerance number for the guild',
+            defaultPermission: false,
+            options: [
+                {
+                    name: 'tolerance',
+                    description: 'The number of joins to be considered spam',
+                    type: 4,
+                    required: true,
+                    min_value: 2,
+                },
+            ],
+        },
+        async execute(interaction: CommandInteraction<'present'>) {
+            log.debug('setverifiedrole');
+            await handleSetSpamTolerance(interaction);
         },
         permissions: { modOnly: true },
     },
