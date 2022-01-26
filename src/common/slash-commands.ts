@@ -87,9 +87,7 @@ export async function updateCommandPermissions(
     guild: Guild,
     remove = false
 ) {
-    log.info('here2');
     const commands = await guild.commands.fetch();
-    log.info('there2');
     if (commands !== undefined) {
         if (remove) {
             for (const [, command] of commands) {

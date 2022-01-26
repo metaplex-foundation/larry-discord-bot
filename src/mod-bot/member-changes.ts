@@ -72,33 +72,19 @@ class MongoCache {
     }
 }
 
+
 export async function handleOnJoin(guildMember: GuildMember) {
     const guild = guildMember.guild;
     let cache = guildToCache.get(guild.id);
     if (cache === undefined) {
         cache = await setCache(guild);
     }
-    if (!cache.checkSetup()) return;
-    if (
-        cache.joinCheckNames.includes(guildMember.user.username.toLowerCase())
-    ) {
-        const dmChannel = await guildMember.createDM();
-        await dmChannel.send(
-            'You have an identical username to a moderator. Please change your username and try again.'
-        );
-        await guildMember.kick('User has identical username to a moderator.');
-        const logChannel = guildMember.guild.channels.resolve(
-            cache.logChannelId
-        );
-        if (logChannel?.isText()) {
-            logChannel.send(
-                `${guildMember.user.tag} **(${guildMember.id})** tried to join the server and was successfully kicked.`
-            );
-        }
-    } else {
+    if (!cache.checkSetup()) throw new Error("Cache not setup?");
+    const badName = await doModCheck(cache, guildMember);
+    if (!badName) {
         const joinedTimestamp = guildMember.joinedTimestamp;
-        if (joinedTimestamp === null) return;
-        const timestamp = Math.floor(joinedTimestamp / 100000);
+        if (joinedTimestamp === null) throw new Error("joinedTimestamp is null...?");
+        const timestamp = Math.floor(joinedTimestamp / 60000);
         const members = timestampToJoins.get(timestamp);
         if (members === undefined) {
             timestampToJoins.clear();
@@ -108,7 +94,7 @@ export async function handleOnJoin(guildMember: GuildMember) {
             if (members.length >= cache.spamTolerance && !activeRaid) {
                 activeRaid = true;
                 guild
-                    .setVerificationLevel('MEDIUM', 'Raid timer has ended')
+                    .setVerificationLevel('HIGH', 'Raid likely')
                     .then(() =>
                         log.info(
                             `Updated guild verification level to ${guild.verificationLevel}`
@@ -123,7 +109,7 @@ export async function handleOnJoin(guildMember: GuildMember) {
                     log.info(
                         `Updated guild verification level to ${guild.verificationLevel}`
                     );
-                }, 1000 * 60 * 10);
+                }, 1000 * 60 * 10); // 10 minute raid timer 
 
                 const logChannel = guildMember.guild.channels.resolve(
                     cache.logChannelId
@@ -138,6 +124,35 @@ export async function handleOnJoin(guildMember: GuildMember) {
         }
     }
 }
+
+export async function doModCheck(
+    cache: MongoCache & {
+        logChannelId: string;
+        spamTolerance: number;
+    },
+    guildMember: GuildMember,
+    changeNickname = false,
+) {
+    if (
+        cache.joinCheckNames.includes(guildMember.user.username.toLowerCase())
+    ) {
+        const dmChannel = await guildMember.createDM();
+        await dmChannel.send(
+            'You have an identical username to a moderator. Please change your username and rejoin.'
+        );
+        await guildMember.kick('User has identical username to a moderator.');
+        const logChannel = guildMember.guild.channels.resolve(
+            cache.logChannelId
+        );
+        if (logChannel?.isText()) {
+            logChannel.send(
+                `${guildMember.user.tag} **(${guildMember.id})** ${changeNickname ? 'changed their nickname' : 'tried to join the server'} and was successfully kicked.`);
+        }
+        return true;
+    }
+    return false;
+}
+
 
 export async function updateCachedJoinCheck(guild: Guild, ids: UserRoleGroup) {
     let cache = guildToCache.get(guild.id);
@@ -178,4 +193,14 @@ export async function setCache(guild: Guild) {
     newCache.checkSetup();
     guildToCache.set(guild.id, newCache);
     return newCache;
+}
+
+export async function handleChangeUsername(guildMember: GuildMember) {
+    const guild = guildMember.guild;
+    let cache = guildToCache.get(guild.id);
+    if (cache === undefined) {
+        cache = await setCache(guild);
+    }
+    if (!cache.checkSetup()) throw new Error("Cache not setup?");
+    await doModCheck(cache, guildMember, true);
 }

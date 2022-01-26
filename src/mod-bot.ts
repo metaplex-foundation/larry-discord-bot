@@ -4,7 +4,7 @@ import {
     setupCommands,
     setupGuild,
 } from './common/slash-commands';
-import { handleOnJoin } from './mod-bot/on-join';
+import { handleChangeUsername, handleOnJoin } from './mod-bot/member-changes';
 import { Client, Intents } from 'discord.js';
 import modCommands from './mod-bot/commands';
 import log from 'loglevel';
@@ -37,7 +37,7 @@ client.once('ready', async () => {
 });
 
 async function main() {
-    if (!client.isReady()) return;
+    if (!client.isReady()) throw new Error("Client isnt ready?");
 
     // const { guilds, commands } = await setupCommands(client, modCommands);
     const commands = getCommands(modCommands);
@@ -47,7 +47,6 @@ async function main() {
         log.debug('Command Name: ', interaction.commandName);
         const theCommand = commands.get(interaction.commandName);
         if (!theCommand) return;
-
         if (!interaction.inCachedGuild()) {
             log.info('cry');
             return;
@@ -70,5 +69,11 @@ async function main() {
     client.on('guildCreate', async (guild: Guild) => {
         await setupGuild(guild, modCommands);
         log.info('Successfully setup new guild: ', guild.name);
+    });
+
+    client.on('guildMemberUpdate', async (oldMember, newMember) => {
+        if (oldMember.user.username !== newMember.user.username){
+            await handleChangeUsername(newMember);
+        }
     });
 }

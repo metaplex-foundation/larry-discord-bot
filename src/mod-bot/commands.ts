@@ -18,13 +18,13 @@ import {
 const slashCommands: CommandObject[] = [
     {
         data: {
-            name: 'emptytrash',
+            name: 'removespam',
             description: 'Gets rid of pesky spam/scam bots',
             defaultPermission: false,
             options: [
                 {
                     name: 'user',
-                    description: 'The user to smite',
+                    description: 'One of the scam/spam bots',
                     type: 6,
                     required: true,
                 },
@@ -49,7 +49,7 @@ const slashCommands: CommandObject[] = [
             ],
         },
         async execute(interaction: CommandInteraction<'cached'>) {
-            log.info('emptytrash');
+            log.info('removespam');
         },
         permissions: {
             modOnly: true,
