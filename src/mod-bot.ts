@@ -1,7 +1,10 @@
-import { Guild, GuildMember, Interaction } from 'discord.js';
-import { getCommands, setupCommands, setupGuild } from './common/slash-commands';
+import { Guild, GuildMember, Interaction, Client, Intents } from 'discord.js';
+import {
+    getCommands,
+    setupCommands,
+    setupGuild,
+} from './common/slash-commands';
 import { handleChangeUsername, handleOnJoin } from './mod-bot/member-changes';
-import { Client, Intents } from 'discord.js';
 import modCommands from './mod-bot/commands';
 import log from 'loglevel';
 import dotenv from 'dotenv';
