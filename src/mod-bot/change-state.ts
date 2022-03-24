@@ -1,191 +1,168 @@
-import { CommandInteraction } from 'discord.js';
+import { CommandInteraction, MessageEmbed } from 'discord.js';
 import log from 'loglevel';
+import { resetCommandPermissions } from '../common/slash-commands';
 import {
-    interactionToUserRoleGroup,
-    resetCommandPermissions,
-} from '../common/slash-commands';
-import {
-    GuildModel,
     updateMods,
-    updateJoinCheck,
+    updateNameCheck,
     resetMongoPermissions,
     resetMongoModel,
     setMongoLogChannel,
     setMongoVerifiedRole,
     setMongoSpamTolerance,
+    UserRoleGroup,
+    findOrCreateModel,
 } from './mod-mongo-model';
-import {
-    setCache,
-    updateCachedLogChannel,
-    updateCachedSpamTolerance,
-} from './on-join';
 
-export async function handleAddMod(interaction: CommandInteraction<'cached'>) {
-    await interaction.deferReply({ ephemeral: true });
-    const toModify = interactionToUserRoleGroup(interaction);
-    await updateMods(interaction, toModify).catch((err) => {
-        if (err instanceof RangeError) {
-            log.info('too many overrides');
-            (async () =>
-                await interaction.editReply('Error! Too many overrides'))();
-            return;
-        }
+import { bold, channelMention, roleMention } from '@discordjs/builders';
+import { deleteReply, errorEmbed, pendingEmbed, successEmbed } from '../common/messages';
+import { EPHEMERAL } from '../common/constants';
+
+export async function handleAddBotMod(interaction: CommandInteraction<'cached'>) {
+    await interaction.deferReply({ ephemeral: EPHEMERAL });
+    const toModify = UserRoleGroup.fromInteraction(interaction);
+    const mentions = bold(toModify.toMentions());
+    await interaction.editReply({
+        embeds: [pendingEmbed.setDescription(`Adding ${mentions} to the bot mods...`)],
     });
-    log.info(
-        `Successfully added ${JSON.stringify(
-            toModify,
-            null,
-            4
-        )} to moderators for guild: ${interaction.guild.name}`
-    );
-    await interaction.editReply(
-        `Successfully added \`${JSON.stringify(
-            toModify,
-            null,
-            4
-        )}\` to moderators.`
-    );
+    if (!(await updateMods(interaction, toModify))) {
+        const embed = errorEmbed.setDescription(`${bold('Error:')} too many overrides.`);
+        await interaction.editReply({ embeds: [embed] });
+        return;
+    }
+    await interaction.editReply({
+        embeds: [successEmbed.setDescription(`Successfully added ${mentions} to the bot mods.`)],
+    });
+    await deleteReply(interaction);
 }
 
-export async function handleRemoveMod(
-    interaction: CommandInteraction<'cached'>
-) {
-    await interaction.deferReply({ ephemeral: true });
-    const toModify = interactionToUserRoleGroup(interaction);
+export async function handleRemoveBotMod(interaction: CommandInteraction<'cached'>) {
+    await interaction.deferReply({ ephemeral: EPHEMERAL });
+    const toModify = UserRoleGroup.fromInteraction(interaction);
     await updateMods(interaction, toModify, true);
-    log.info(
-        `Successfully removed ${JSON.stringify(
-            toModify,
-            null,
-            4
-        )} from moderators for guild: ${interaction.guild.name}`
+    const embed = successEmbed.setDescription(
+        `Successfully removed ${bold(toModify.toMentions())} from the bot mods.`
     );
-    await interaction.editReply(
-        `Successfully removed \`${JSON.stringify(
-            toModify,
-            null,
-            4
-        )}\` from moderators.`
-    );
+    await interaction.editReply({ embeds: [embed] });
+    await deleteReply(interaction);
 }
 
-export async function handleAddJoinCheck(
-    interaction: CommandInteraction<'cached'>
-) {
-    await interaction.deferReply({ ephemeral: true });
-    const toModify = interactionToUserRoleGroup(interaction);
-    await updateJoinCheck(interaction.guild, toModify);
-    log.info(
-        `Successfully added ${JSON.stringify(
-            toModify,
-            null,
-            4
-        )} to join check for guild: ${interaction.guild.name}`
+export async function handleAddNameCheck(interaction: CommandInteraction<'cached'>) {
+    await interaction.deferReply({ ephemeral: EPHEMERAL });
+    const toModify = UserRoleGroup.fromInteraction(interaction);
+    const mentions = bold(toModify.toMentions());
+    await interaction.editReply({
+        embeds: [pendingEmbed.setDescription(`Adding ${mentions} to the name check...`)],
+    });
+    await updateNameCheck(interaction.guild, toModify);
+    const embed = successEmbed.setDescription(
+        `Successfully added ${bold(toModify.toMentions())} to the name check.`
     );
-    await interaction.editReply(
-        `Successfully added \`${JSON.stringify(
-            toModify,
-            null,
-            4
-        )}\` to join check.`
-    );
+    await interaction.editReply({ embeds: [embed] });
+    await deleteReply(interaction);
 }
 
-export async function handleRemoveJoinCheck(
-    interaction: CommandInteraction<'cached'>
-) {
-    await interaction.deferReply({ ephemeral: true });
-    const toModify = interactionToUserRoleGroup(interaction);
-    await updateJoinCheck(interaction.guild, toModify, true);
-    log.info(
-        `Successfully removed ${JSON.stringify(
-            toModify,
-            null,
-            4
-        )} from join check for guild: ${interaction.guild.name}`
+export async function handleRemoveNameCheck(interaction: CommandInteraction<'cached'>) {
+    await interaction.deferReply({ ephemeral: EPHEMERAL });
+    const toModify = UserRoleGroup.fromInteraction(interaction);
+    const mentions = bold(toModify.toMentions());
+    await interaction.editReply({
+        embeds: [pendingEmbed.setDescription(`Removing ${mentions} from the name check...`)],
+    });
+    await updateNameCheck(interaction.guild, toModify, true);
+    const embed = successEmbed.setDescription(
+        `Successfully removed ${bold(toModify.toMentions())} from the name check.`
     );
-    await interaction.editReply(
-        `Successfully removed \`${JSON.stringify(
-            toModify,
-            null,
-            4
-        )}\` from join check.`
-    );
+    await interaction.editReply({ embeds: [embed] });
+    await deleteReply(interaction);
 }
 
-export async function handleLogPermissions(
-    interaction: CommandInteraction<'cached'>
-) {
+export async function handleLogPermissions(interaction: CommandInteraction<'cached'>) {
+    await interaction.deferReply({ ephemeral: EPHEMERAL });
     const guild = interaction.guild;
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.editReply({
+        embeds: [pendingEmbed.setDescription('Fetching guild commands...')],
+    });
     const commands = await guild.commands.fetch();
-    const command = commands.find((command) => command.name === 'emptytrash');
-    if (command === undefined) return;
-    log.info(await GuildModel.findOne({ guildId: guild.id }));
-    const permissions = await command.permissions.fetch({ guild: guild.id });
-    log.info(command.name + ': ' + JSON.stringify(permissions, null, 4));
-    await interaction.editReply(`Successfully logged permissions.`);
+    const command = commands.find((command) => command.name === 'removeby');
+    if (command === undefined) throw new Error('Command not found');
+    await interaction.editReply({
+        embeds: [pendingEmbed.setDescription('Fetching guild command permissions...')],
+    });
+    const commandPermissions = await command.permissions.fetch({ guild: guild.id });
+    const commandMentions = UserRoleGroup.fromPermissions(commandPermissions).toMentions();
+
+    const botMods = (await findOrCreateModel(guild)).moderators;
+    const botMentions = UserRoleGroup.fromUserRoles(botMods).toMentions();
+
+    const embed = successEmbed.setDescription(
+        `Current command permissions: ${bold(commandMentions)}.\n\nCurrent bot mods: ${bold(
+            botMentions
+        )}.`
+    );
+    await interaction.editReply({ embeds: [embed] });
+    await deleteReply(interaction);
 }
 
-export async function handleResetPermissions(
-    interaction: CommandInteraction<'cached'>
-) {
+export async function handleResetPermissions(interaction: CommandInteraction<'cached'>) {
+    await interaction.deferReply({ ephemeral: EPHEMERAL });
     const guild = interaction.guild;
-    await interaction.deferReply({ ephemeral: true });
     await resetMongoPermissions(guild);
+    await interaction.editReply({
+        embeds: [pendingEmbed.setDescription('Resetting command permissions...')],
+    });
     await resetCommandPermissions(guild);
-    log.info('Successfully reset permissions for guild: ', guild.name);
-    await interaction.editReply(`Successfully reset permissions.`);
+    await interaction.editReply({
+        embeds: [successEmbed.setDescription('Successfully reset permissions.')],
+    });
+    await deleteReply(interaction);
 }
 
 export async function handleReset(interaction: CommandInteraction<'cached'>) {
+    await interaction.deferReply({ ephemeral: EPHEMERAL });
     const guild = interaction.guild;
-    await interaction.deferReply({ ephemeral: true });
     await resetMongoModel(guild);
+    await interaction.editReply({
+        embeds: [pendingEmbed.setDescription('Resetting command permissions...')],
+    });
     await resetCommandPermissions(guild);
-    await setCache(guild);
-    log.info('Successfully reset state for guild: ', guild.name);
-    await interaction.editReply(`Successfully reset state.`);
+    await interaction.editReply({
+        embeds: [successEmbed.setDescription('Successfully reset guild state.')],
+    });
+    await deleteReply(interaction);
 }
 
-export async function handleSetLogChannel(
-    interaction: CommandInteraction<'cached'>
-) {
+export async function handleSetLogChannel(interaction: CommandInteraction<'cached'>) {
+    await interaction.deferReply({ ephemeral: EPHEMERAL });
     const guild = interaction.guild;
-    await interaction.deferReply({ ephemeral: true });
     const logChannel = interaction.options.getChannel('channel', true);
     await setMongoLogChannel(guild, logChannel.id);
-    await updateCachedLogChannel(guild, logChannel.id);
-    log.info('Successfully set log channel to: ', logChannel.name);
-    await interaction.editReply(
-        `Successfully set log channel to **<#${logChannel.id}>**.`
-    );
+    const successEmbed = new MessageEmbed()
+        .setColor('GREEN')
+        .setDescription(`Successfully set log channel to ${bold(channelMention(logChannel.id))}.`);
+    await interaction.editReply({ embeds: [successEmbed] });
+    await deleteReply(interaction);
 }
 
-export async function handleSetVerifiedRole(
-    interaction: CommandInteraction<'cached'>
-) {
+export async function handleSetVerifiedRole(interaction: CommandInteraction<'cached'>) {
+    await interaction.deferReply({ ephemeral: EPHEMERAL });
     const guild = interaction.guild;
-    await interaction.deferReply({ ephemeral: true });
     const verifiedRole = interaction.options.getRole('role', true);
-    if (guild === null) return;
     await setMongoVerifiedRole(guild, verifiedRole.id);
-    log.info('Successfully set verified role to: ', verifiedRole.name);
-    await interaction.editReply(
-        `Successfully set verified role to **<&@${verifiedRole.id}>**.`
+    const embed = successEmbed.setDescription(
+        `Successfully set verified role to ${bold(roleMention(verifiedRole.id))}.`
     );
+    await interaction.editReply({ embeds: [embed] });
+    await deleteReply(interaction);
 }
 
-export async function handleSetSpamTolerance(
-    interaction: CommandInteraction<'cached'>
-) {
+export async function handleSetSpamTolerance(interaction: CommandInteraction<'cached'>) {
+    await interaction.deferReply({ ephemeral: EPHEMERAL });
     const guild = interaction.guild;
-    await interaction.deferReply({ ephemeral: true });
     const tolerance = interaction.options.getInteger('tolerance', true);
     await setMongoSpamTolerance(guild, tolerance);
-    await updateCachedSpamTolerance(guild, tolerance);
-    log.info('Finished setting spam tolerance for: ', guild.name);
-    await interaction.editReply(
-        `Successfully set spam tolerance to **${tolerance}**.`
+    const embed = successEmbed.setDescription(
+        `Successfully set spam tolerance to ${bold(tolerance.toString())}.`
     );
+    await interaction.editReply({ embeds: [embed] });
+    await deleteReply(interaction);
 }

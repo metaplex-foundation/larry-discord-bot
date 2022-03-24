@@ -2,13 +2,13 @@ import {
     ApplicationCommandPermissionData,
     Client,
     Collection,
-    CommandInteraction,
     Guild,
+    GuildApplicationCommandPermissionData,
     OAuth2Guild,
 } from 'discord.js';
 import { CommandObject } from '../types';
 import log from 'loglevel';
-import { GuildModel, UserRoleGroup } from '../mod-bot/mod-mongo-model';
+import { defaultModel, GuildModel, UserRoleGroup } from '../mod-bot/mod-mongo-model';
 import { BOT_MASTER_ID } from './constants';
 
 export function getCommands(commandObjects: CommandObject[]) {
@@ -23,111 +23,68 @@ export function getCommands(commandObjects: CommandObject[]) {
 export async function deleteGlobalCommands(client: Client<true>) {
     await client.application.commands.set([]);
     log.info(
-        `Cleared all global commands for: ${
-            client.application.name ?? client.application.id
-        }`
+        `Cleared all global commands for: ${client.application.name ?? client.application.id}`
     );
 }
 
 export async function setGuildCommands(
     slashCommands: CommandObject[],
     guild: Guild,
-    modIds: UserRoleGroup | undefined
+    modIds: UserRoleGroup
 ) {
     await guild.commands.set([]);
     log.info(`Cleared all guild commands for: ${guild.name}`);
-    let modPermissions: ApplicationCommandPermissionData[] = [];
-    modPermissions.push({
-        id: BOT_MASTER_ID,
-        type: 'USER',
-        permission: true,
-    });
-
-    if (modIds !== undefined) {
-        modPermissions = userRoleGroupToData(modIds, modPermissions);
-    }
-
     for (const command of slashCommands) {
-        const newCommand = await guild.commands.create(command.data);
+        await guild.commands.create(command.data);
         log.debug(`Set ${command.data.name} command for: ${guild.name}`);
-        if (command.permissions.modOnly) {
-            await newCommand.permissions.set({ permissions: modPermissions });
-            log.info(
-                `Set permissions for ${command.data.name} command for: ${guild.name}`
-            );
-        }
     }
-    log.info('Finished setting commands for guild: ', guild.name);
+    log.info(`Setting guild command permissions for: ${guild.name}`);
+    await updateCommandPermissions(modIds, guild);
+    log.info('Finished setting commands for: ', guild.name);
 }
 
-export function userRoleGroupToData(
-    ids: UserRoleGroup,
-    permissions: ApplicationCommandPermissionData[] = []
-): ApplicationCommandPermissionData[] {
-    if (ids !== undefined) {
-        const rolePermissions: ApplicationCommandPermissionData[] =
-            ids.roleIds.map((id) => ({
-                id: id,
-                type: 'ROLE',
-                permission: true,
-            }));
-        const userPermissions: ApplicationCommandPermissionData[] =
-            ids.userIds.map((id) => ({
-                id: id,
-                type: 'USER',
-                permission: true,
-            }));
-        permissions = permissions.concat(rolePermissions, userPermissions);
-    }
-    return permissions;
-}
-
-export async function updateCommandPermissions(
-    ids: UserRoleGroup,
-    guild: Guild,
-    remove = false
-) {
+export async function updateCommandPermissions(ids: UserRoleGroup, guild: Guild) {
     const commands = await guild.commands.fetch();
-    if (commands !== undefined) {
-        if (remove) {
-            for (const [, command] of commands) {
-                ids.userIds = ids.userIds.filter(
-                    (userId: string) => userId !== BOT_MASTER_ID
-                );
-                log.info(ids);
-                await command.permissions.remove({
-                    users: ids.userIds,
-                    roles: ids.roleIds,
-                });
-            }
-        } else {
-            const permissions = userRoleGroupToData(ids);
-            log.info(ids);
-            for (const [, command] of commands) {
-                await command.permissions.add({ permissions });
-            }
-        }
+    const permissionsArray: GuildApplicationCommandPermissionData[] = [];
+    const permissions = ids.toPermissions();
+    for (const [id] of commands) {
+        permissionsArray.push({
+            id: id,
+            permissions: permissions,
+        });
     }
+    await guild.commands.permissions.set({
+        fullPermissions: permissionsArray,
+    });
 }
 
 export async function resetCommandPermissions(guild: Guild) {
-    for (const [, command] of await guild.commands.fetch()) {
-        await command.permissions.set({
-            permissions: [
-                {
-                    id: BOT_MASTER_ID,
-                    type: 'USER',
-                    permission: true,
-                },
-            ],
+    const commands = await guild.commands.fetch();
+    const permissionsArray: GuildApplicationCommandPermissionData[] = [];
+    const permissions: ApplicationCommandPermissionData[] = [
+        {
+            id: BOT_MASTER_ID,
+            type: 'USER',
+            permission: true,
+        },
+        {
+            id: guild.ownerId,
+            type: 'USER',
+            permission: true,
+        },
+    ];
+    for (const [id] of commands) {
+        permissionsArray.push({
+            id: id,
+            permissions: permissions,
         });
     }
+    await guild.commands.permissions.set({
+        fullPermissions: permissionsArray,
+    });
 }
 
-export async function setupCommands(
-    client: Client<true>,
-    slashCommands: CommandObject[]
-) {
+export async function setupCommands(client: Client<true>, slashCommands: CommandObject[]) {
     // await deleteGlobalCommands(client);
     log.debug('Fetching all guilds...');
     const partialGuilds = await client.guilds.fetch();
@@ -141,10 +98,7 @@ export async function setupCommands(
     return { guilds, commands };
 }
 
-export async function setupGuild(
-    guild: OAuth2Guild | Guild,
-    slashCommands: CommandObject[]
-) {
+export async function setupGuild(guild: OAuth2Guild | Guild, slashCommands: CommandObject[]) {
     let fetchedGuild: Guild;
     if (guild instanceof OAuth2Guild) {
         fetchedGuild = await guild.fetch();
@@ -154,28 +108,12 @@ export async function setupGuild(
     log.debug(`Fetched ${fetchedGuild.name}.`);
     let targetGuild = await GuildModel.findOne({ guildId: guild.id });
     if (!targetGuild) {
-        targetGuild = await GuildModel.create({
-            guildId: guild.id,
-            moderators: {
-                roleIds: [],
-                userIds: [BOT_MASTER_ID],
-            },
-        });
+        targetGuild = await defaultModel(fetchedGuild);
     }
-    const moderators = targetGuild.moderators;
-    await setGuildCommands(slashCommands, fetchedGuild, moderators);
+    await setGuildCommands(
+        slashCommands,
+        fetchedGuild,
+        UserRoleGroup.fromUserRoles(targetGuild.moderators)
+    );
     return fetchedGuild;
-}
-
-export function interactionToUserRoleGroup(
-    interaction: CommandInteraction
-): UserRoleGroup {
-    const options = interaction.options;
-    const user = options.getUser('user')?.id;
-    const role = options.getRole('role')?.id;
-    log.info(role);
-    return {
-        roleIds: role ? [role] : [],
-        userIds: user ? [user] : [],
-    };
 }

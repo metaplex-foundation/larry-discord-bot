@@ -1,9 +1,5 @@
 import algoliasearch, { SearchIndex } from 'algoliasearch';
-import {
-    ApplicationCommandOptionChoice,
-    AutocompleteInteraction,
-    Interaction,
-} from 'discord.js';
+import { ApplicationCommandOptionChoice, AutocompleteInteraction, Interaction } from 'discord.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -12,10 +8,7 @@ const ALGOLIA_KEY_METAPLEX = process.env.ALGOLIA_KEY_METAPLEX ?? 'MISSING';
 const ALGOLIA_APP_SOLANA = process.env.ALGOLIA_APP_SOLANA ?? 'MISSING';
 const ALGOLIA_KEY_SOLANA = process.env.ALGOLIA_KEY_SOLANA ?? 'MISSING';
 
-const metaplexClient = algoliasearch(
-    ALGOLIA_APP_METAPLEX,
-    ALGOLIA_KEY_METAPLEX
-);
+const metaplexClient = algoliasearch(ALGOLIA_APP_METAPLEX, ALGOLIA_KEY_METAPLEX);
 const solanaClient = algoliasearch(ALGOLIA_APP_SOLANA, ALGOLIA_KEY_SOLANA);
 
 export const metaplexIndex = metaplexClient.initIndex('metaplex');
@@ -51,9 +44,7 @@ export async function handleAutoComplete(interaction: AutocompleteInteraction) {
             lastUserOptions.delete(key);
         }
     }
-    if (
-        Object.prototype.hasOwnProperty.call(COMMAND_TO_INDEX_MAP, commandName)
-    ) {
+    if (Object.prototype.hasOwnProperty.call(COMMAND_TO_INDEX_MAP, commandName)) {
         const focusedOption = interaction.options.getFocused(true);
         if (focusedOption.name === 'query') {
             const query = focusedOption.value;
@@ -75,14 +66,15 @@ export async function handleAutoComplete(interaction: AutocompleteInteraction) {
                 COMMAND_TO_INDEX_MAP[commandName]
             );
             lastUserOptions.set(user.id, algoliaResponse);
-            const newResponses: ApplicationCommandOptionChoice[] =
-                algoliaResponse.combined.map((choice) => {
+            const newResponses: ApplicationCommandOptionChoice[] = algoliaResponse.combined.map(
+                (choice) => {
                     const result: ApplicationCommandOptionChoice = {
                         name: choice,
                         value: choice,
                     };
                     return result;
-                });
+                }
+            );
             const response = await interaction.respond(newResponses);
         }
     }
@@ -115,8 +107,7 @@ export async function getAlgoliaResponse(
         attributesToRetrieve: ['type', 'hierarchy', 'url', 'hits', 'content'],
         hitsPerPage: hits,
     });
-    if (!result.hits)
-        return { responses: [], lvl0s: [], links: [], combined: [] };
+    if (!result.hits) return { responses: [], lvl0s: [], links: [], combined: [] };
     const responses: string[] = [];
     const lvl0s: string[] = [];
     const links: string[] = [];
@@ -127,8 +118,7 @@ export async function getAlgoliaResponse(
         let lvl0 = '';
         if (type === 'content') {
             choice = result.hits[i]?.content;
-            if (!choice)
-                return { responses: [], lvl0s: [], links: [], combined: [] };
+            if (!choice) return { responses: [], lvl0s: [], links: [], combined: [] };
             const length = choice.length;
             choice = choice.substring(0, Math.min(choice.length, 97));
             if (length > 97) choice = choice + '...';
@@ -156,10 +146,7 @@ export async function getAlgoliaResponse(
     return { responses, lvl0s, links, combined };
 }
 
-export async function algoliaResult(
-    index: SearchIndex,
-    interaction: Interaction
-) {
+export async function algoliaResult(index: SearchIndex, interaction: Interaction) {
     if (!interaction.isCommand()) return;
     const query = interaction.options.getString('query');
     const user = interaction.options.getUser('target');
@@ -173,8 +160,7 @@ export async function algoliaResult(
     if (lastOption.isSame) {
         const first = lastOption.results?.responses[lastOption.index];
         const line2 = `**${first}**\n*${lastOption.link}*`;
-        const message =
-            (user ? `*Documentation suggestion for ${user}:*\n` : '') + line2;
+        const message = (user ? `*Documentation suggestion for ${user}:*\n` : '') + line2;
         const response = await interaction.editReply(message);
         lastUserOptions.delete(interaction.user.id);
         return;

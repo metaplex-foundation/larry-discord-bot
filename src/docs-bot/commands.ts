@@ -1,10 +1,6 @@
 import { CommandInteraction } from 'discord.js';
 import { CommandObject } from '../types';
-import {
-    algoliaResult,
-    metaplexIndex,
-    solanaIndex,
-} from './handle-autocomplete';
+import { algoliaResult, metaplexIndex, solanaIndex } from './handle-autocomplete';
 
 const slashCommands: CommandObject[] = [
     {

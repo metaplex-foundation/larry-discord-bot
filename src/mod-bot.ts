@@ -1,15 +1,12 @@
 import { Guild, GuildMember, Interaction } from 'discord.js';
-import {
-    getCommands,
-    setupCommands,
-    setupGuild,
-} from './common/slash-commands';
+import { getCommands, setupCommands, setupGuild } from './common/slash-commands';
 import { handleChangeUsername, handleOnJoin } from './mod-bot/member-changes';
 import { Client, Intents } from 'discord.js';
 import modCommands from './mod-bot/commands';
 import log from 'loglevel';
 import dotenv from 'dotenv';
 import { connectDatabase } from './common/connect-db';
+import { EPHEMERAL } from './common/constants';
 dotenv.config();
 
 log.setLevel(log.levels.DEBUG);
@@ -37,10 +34,10 @@ client.once('ready', async () => {
 });
 
 async function main() {
-    if (!client.isReady()) throw new Error("Client isnt ready?");
+    if (!client.isReady()) throw new Error('Client isnt ready?');
 
-    // const { guilds, commands } = await setupCommands(client, modCommands);
-    const commands = getCommands(modCommands);
+    const { guilds, commands } = await setupCommands(client, modCommands);
+    // const commands = getCommands(modCommands);
     // return;
     client.on('interactionCreate', async (interaction: Interaction) => {
         if (!interaction.isCommand()) return;
@@ -57,7 +54,7 @@ async function main() {
             log.error(error);
             await interaction.reply({
                 content: 'There was an error while executing this command!',
-                ephemeral: true,
+                ephemeral: EPHEMERAL,
             });
         }
     });
@@ -72,7 +69,7 @@ async function main() {
     });
 
     client.on('guildMemberUpdate', async (oldMember, newMember) => {
-        if (oldMember.user.username !== newMember.user.username){
+        if (oldMember.user.username !== newMember.user.username) {
             await handleChangeUsername(newMember);
         }
     });

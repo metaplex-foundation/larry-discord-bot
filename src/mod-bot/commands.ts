@@ -1,13 +1,13 @@
 import { CommandInteraction } from 'discord.js';
 import log from 'loglevel';
 import { CommandObject } from '../types';
-import { handleCheckSpam } from './ban-scams';
+import { handleCheckSpam, handleRemoveByJoinWindow, handleRemoveByName, handleRemoveByUser, handleRemoveSimilarJoins } from './moderation';
 import {
-    handleAddJoinCheck,
-    handleAddMod,
+    handleAddNameCheck,
+    handleAddBotMod,
     handleLogPermissions,
-    handleRemoveJoinCheck,
-    handleRemoveMod,
+    handleRemoveNameCheck,
+    handleRemoveBotMod,
     handleReset,
     handleResetPermissions,
     handleSetLogChannel,
@@ -18,38 +18,360 @@ import {
 const slashCommands: CommandObject[] = [
     {
         data: {
-            name: 'removespam',
+            name: 'removeby',
             description: 'Gets rid of pesky spam/scam bots',
             defaultPermission: false,
             options: [
                 {
                     name: 'user',
-                    description: 'One of the scam/spam bots',
-                    type: 6,
-                    required: true,
-                },
-                {
-                    name: 'method',
-                    description: 'kick or ban',
-                    type: 3,
-                    required: true,
-                    choices: [
-                        { name: 'ban', value: 'ban' },
-                        { name: 'kick', value: 'kick' },
+                    type: 1,
+                    description: 'Removes multiple spam bots by user',
+                    options: [
+                        {
+                            name: 'user',
+                            description: 'One of the scam/spam bots',
+                            type: 6,
+                            required: true,
+                        },
+                        {
+                            name: 'range',
+                            description:
+                                'Join time window to use in minutes, starting with the user',
+                            type: 4,
+                            required: true,
+                            min_value: 1,
+                            max_value: 60,
+                        },
+                        {
+                            name: 'method',
+                            description: 'kick or ban (Default: kick)',
+                            type: 3,
+                            required: false,
+                            choices: [
+                                { name: 'ban', value: 'ban' },
+                                { name: 'kick', value: 'kick' },
+                            ],
+                        },
+                        {
+                            name: 'verified',
+                            description: 'Include members with the verified role',
+                            type: 5,
+                            required: false,
+                        },
                     ],
                 },
                 {
-                    name: 'joinrange',
-                    description: 'Time window to use in minutes',
-                    type: 4,
-                    required: false,
-                    min_value: 1,
-                    max_value: 60,
+                    name: 'name',
+                    description: 'Removes users with matching names',
+                    type: 1,
+                    options: [
+                        {
+                            name: 'name',
+                            description: 'The name to check',
+                            type: 3,
+                            required: true,
+                        },
+                        {
+                            name: 'type',
+                            description: 'Name match type (Default: includes)',
+                            type: 3,
+                            required: false,
+                            choices: [
+                                { name: 'startswith', value: 'startswith' },
+                                { name: 'endswith', value: 'endswith' },
+                                { name: 'includes', value: 'includes' },
+                            ],
+                        },
+                        {
+                            name: 'method',
+                            description: 'kick or ban (Default: kick)',
+                            type: 3,
+                            required: false,
+                            choices: [
+                                { name: 'ban', value: 'ban' },
+                                { name: 'kick', value: 'kick' },
+                            ],
+                        },
+                        {
+                            name: 'verified',
+                            description: 'Include members with the verified role',
+                            type: 5,
+                            required: false,
+                        },
+                    ],
+                },
+                {
+                    name: 'joinwindow',
+                    description: 'Remove bots that joined within a window',
+                    type: 1,
+                    options: [
+                        {
+                            name: 'first',
+                            description: 'The start of the window',
+                            type: 6,
+                            required: true,
+                        },
+                        {
+                            name: 'last',
+                            description: 'The end of the window',
+                            type: 6,
+                            required: true,
+                        },
+                        {
+                            name: 'method',
+                            description: 'kick or ban (Default: kick)',
+                            type: 3,
+                            required: false,
+                            choices: [
+                                { name: 'ban', value: 'ban' },
+                                { name: 'kick', value: 'kick' },
+                            ],
+                        },
+                        {
+                            name: 'verified',
+                            description: 'Include members with the verified role',
+                            type: 5,
+                            required: false,
+                        },
+                    ],
                 },
             ],
         },
         async execute(interaction: CommandInteraction<'cached'>) {
-            log.info('removespam');
+            switch (interaction.options.getSubcommand(true)) {
+                case 'user':
+                    await handleRemoveByUser(interaction);
+                    break;
+                case 'name':
+                    await handleRemoveByName(interaction);
+                    break;
+                case 'joinwindow':
+                    await handleRemoveByJoinWindow(interaction);
+                    break;
+            }
+        },
+        permissions: {
+            modOnly: true,
+        },
+    },
+    {
+        data: {
+            name: 'set',
+            description: 'Configures the settings for the guild',
+            defaultPermission: false,
+            options: [
+                {
+                    name: 'logchannel',
+                    description: 'Sets the join spam log channel for the guild',
+                    type: 1,
+                    options: [
+                        {
+                            name: 'channel',
+                            description: 'The channel to set',
+                            type: 7,
+                            required: true,
+                            channel_types: [0],
+                        },
+                    ],
+                },
+                {
+                    name: 'verifiedrole',
+                    description: 'Sets the verified role for the guild',
+                    type: 1,
+                    options: [
+                        {
+                            name: 'role',
+                            description: 'The role to set',
+                            type: 8,
+                            required: true,
+                        },
+                    ],
+                },
+                {
+                    name: 'spamtolerance',
+                    description: 'Sets the spam tolerance number for the guild',
+                    type: 1,
+                    options: [
+                        {
+                            name: 'tolerance',
+                            description: 'The number of joins to be considered spam. Min: 2',
+                            type: 4,
+                            required: true,
+                            min_value: 2,
+                        },
+                    ],
+                },
+            ],
+        },
+        async execute(interaction: CommandInteraction<'cached'>) {
+            switch (interaction.options.getSubcommand(true)) {
+                case 'logchannel':
+                    await handleSetLogChannel(interaction);
+                    break;
+                case 'verifiedrole':
+                    await handleSetVerifiedRole(interaction);
+                    break;
+                case 'spamtolerance':
+                    await handleSetSpamTolerance(interaction);
+                    break;
+            }
+        },
+        permissions: { modOnly: true },
+    },
+    {
+        data: {
+            name: 'namecheck',
+            description: 'Adds or removes a user or a role from the name check',
+            defaultPermission: false,
+            options: [
+                {
+                    name: 'add',
+                    description: 'Adds a user or a role to the name check',
+                    type: 1,
+                    options: [
+                        {
+                            name: 'user',
+                            description: 'The user to add',
+                            type: 6,
+                            required: false,
+                        },
+                        {
+                            name: 'role',
+                            description: 'The role to add',
+                            type: 8,
+                            required: false,
+                        },
+                    ],
+                },
+                {
+                    name: 'remove',
+                    description: 'Removes a user or a role from the name check',
+                    type: 1,
+                    options: [
+                        {
+                            name: 'user',
+                            description: 'The user to remove',
+                            type: 6,
+                            required: false,
+                        },
+                        {
+                            name: 'role',
+                            description: 'The role to remove',
+                            type: 8,
+                            required: false,
+                        },
+                    ],
+                },
+            ],
+        },
+        async execute(interaction: CommandInteraction<'cached'>) {
+            switch (interaction.options.getSubcommand(true)) {
+                case 'add':
+                    await handleAddNameCheck(interaction);
+                    break;
+                case 'remove':
+                    await handleRemoveNameCheck(interaction);
+                    break;
+            }
+        },
+        permissions: { modOnly: true },
+    },
+    {
+        data: {
+            name: 'botmod',
+            description: 'Adds or removes a user or a role from the bot moderator set',
+            defaultPermission: false,
+            options: [
+                {
+                    name: 'add',
+                    description: 'Adds a user or a role to the bot moderator set',
+                    type: 1,
+                    options: [
+                        {
+                            name: 'user',
+                            description: 'The user to add',
+                            type: 6,
+                            required: false,
+                        },
+                        {
+                            name: 'role',
+                            description: 'The role to add',
+                            type: 8,
+                            required: false,
+                        },
+                    ],
+                },
+                {
+                    name: 'remove',
+                    description: 'Removes a user or a role from the bot moderator set',
+                    type: 1,
+                    options: [
+                        {
+                            name: 'user',
+                            description: 'The user to remove',
+                            type: 6,
+                            required: false,
+                        },
+                        {
+                            name: 'role',
+                            description: 'The role to remove',
+                            type: 8,
+                            required: false,
+                        },
+                    ],
+                },
+            ],
+        },
+        async execute(interaction: CommandInteraction<'cached'>) {
+            switch (interaction.options.getSubcommand(true)) {
+                case 'add':
+                    await handleAddBotMod(interaction);
+                    break;
+                case 'remove':
+                    await handleRemoveBotMod(interaction);
+                    break;
+            }
+        },
+        permissions: { modOnly: true },
+    },
+    {
+        data: {
+            name: 'permissions',
+            description: 'Manage botmod and namecheck permissions',
+            defaultPermission: false,
+            options: [
+                {
+                    name: 'log',
+                    description: 'Logs the current mod and namecheck permissions',
+                    type: 1,
+                },
+                {
+                    name: 'reset',
+                    description: 'Resets the mod and namecheck permissions for the guild',
+                    type: 1,
+                },
+            ],
+        },
+        async execute(interaction: CommandInteraction<'cached'>) {
+            switch (interaction.options.getSubcommand(true)) {
+                case 'log':
+                    await handleLogPermissions(interaction);
+                    break;
+                case 'reset':
+                    await handleResetPermissions(interaction);
+                    break;
+            }
+        },
+        permissions: { modOnly: true },
+    },
+    {
+        data: {
+            type: 2,
+            name: 'Kick Similar Joins',
+            defaultPermission: false,
+        },
+        async execute(interaction: CommandInteraction<'cached'>) {
+            await handleRemoveSimilarJoins(interaction, 'kick');
         },
         permissions: {
             modOnly: true,
@@ -58,24 +380,11 @@ const slashCommands: CommandObject[] = [
     {
         data: {
             type: 2,
-            name: 'kicksimilarjoin',
+            name: 'Ban Similar Joins',
             defaultPermission: false,
         },
         async execute(interaction: CommandInteraction<'cached'>) {
-            log.info('kicksimilarjoin');
-        },
-        permissions: {
-            modOnly: true,
-        },
-    },
-    {
-        data: {
-            type: 2,
-            name: 'bansimilarjoin',
-            defaultPermission: false,
-        },
-        async execute(interaction: CommandInteraction<'cached'>) {
-            log.info('bansimilarjoin');
+            await handleRemoveSimilarJoins(interaction, 'ban');
         },
         permissions: {
             modOnly: true,
@@ -94,193 +403,12 @@ const slashCommands: CommandObject[] = [
     },
     {
         data: {
-            name: 'addjoincheck',
-            description: 'Adds a user or a role to the join check',
-            defaultPermission: false,
-            options: [
-                {
-                    name: 'user',
-                    description: 'The user to add',
-                    type: 6,
-                    required: false,
-                },
-                {
-                    name: 'role',
-                    description: 'The role to add',
-                    type: 8,
-                    required: false,
-                },
-            ],
-        },
-        async execute(interaction: CommandInteraction<'cached'>) {
-            await handleAddJoinCheck(interaction);
-        },
-        permissions: { modOnly: true },
-    },
-    {
-        data: {
-            name: 'addmod',
-            description: 'Adds a user or a role to the moderator set',
-            defaultPermission: false,
-            options: [
-                {
-                    name: 'user',
-                    description: 'The user to add',
-                    type: 6,
-                    required: false,
-                },
-                {
-                    name: 'role',
-                    description: 'The role to add',
-                    type: 8,
-                    required: false,
-                },
-            ],
-        },
-        async execute(interaction: CommandInteraction<'cached'>) {
-            await handleAddMod(interaction);
-        },
-        permissions: { modOnly: true },
-    },
-    {
-        data: {
-            name: 'removemod',
-            description: 'Removes a user or a role from the moderator set',
-            defaultPermission: false,
-            options: [
-                {
-                    name: 'user',
-                    description: 'The user to remove',
-                    type: 6,
-                    required: false,
-                },
-                {
-                    name: 'role',
-                    description: 'The role to remove',
-                    type: 8,
-                    required: false,
-                },
-            ],
-        },
-        async execute(interaction: CommandInteraction<'cached'>) {
-            await handleRemoveMod(interaction);
-        },
-        permissions: { modOnly: true },
-    },
-    {
-        data: {
-            name: 'removejoincheck',
-            description: 'Removes a user or a role from the join check',
-            defaultPermission: false,
-            options: [
-                {
-                    name: 'user',
-                    description: 'The user to remove',
-                    type: 6,
-                    required: false,
-                },
-                {
-                    name: 'role',
-                    description: 'The role to remove',
-                    type: 8,
-                    required: false,
-                },
-            ],
-        },
-        async execute(interaction: CommandInteraction<'cached'>) {
-            await handleRemoveJoinCheck(interaction);
-        },
-        permissions: { modOnly: true },
-    },
-    {
-        data: {
-            name: 'logpermissions',
-            description: 'Logs the current mod and joincheck permissions',
-            defaultPermission: false,
-        },
-        async execute(interaction: CommandInteraction<'cached'>) {
-            await handleLogPermissions(interaction);
-        },
-        permissions: { modOnly: true },
-    },
-    {
-        data: {
-            name: 'resetpermissions',
-            description: 'Resets the Angry Larry permissions for the guild',
-            defaultPermission: false,
-        },
-        async execute(interaction: CommandInteraction<'cached'>) {
-            await handleResetPermissions(interaction);
-        },
-        permissions: { modOnly: true },
-    },
-    {
-        data: {
             name: 'reset',
             description: 'Resets the state for the guild',
             defaultPermission: false,
         },
         async execute(interaction: CommandInteraction<'cached'>) {
             await handleReset(interaction);
-        },
-        permissions: { modOnly: true },
-    },
-    {
-        data: {
-            name: 'setlogchannel',
-            description: 'Sets the join spam log channel for the guild',
-            defaultPermission: false,
-            options: [
-                {
-                    name: 'channel',
-                    description: 'The channel to set',
-                    type: 7,
-                    required: true,
-                    channel_types: [0],
-                },
-            ],
-        },
-        async execute(interaction: CommandInteraction<'cached'>) {
-            await handleSetLogChannel(interaction);
-        },
-        permissions: { modOnly: true },
-    },
-    {
-        data: {
-            name: 'setverifiedrole',
-            description: 'Sets the verified role for the guild',
-            defaultPermission: false,
-            options: [
-                {
-                    name: 'role',
-                    description: 'The role to set',
-                    type: 8,
-                    required: true,
-                },
-            ],
-        },
-        async execute(interaction: CommandInteraction<'cached'>) {
-            await handleSetVerifiedRole(interaction);
-        },
-        permissions: { modOnly: true },
-    },
-    {
-        data: {
-            name: 'setspamtolerance',
-            description: 'Sets the spam tolerance number for the guild',
-            defaultPermission: false,
-            options: [
-                {
-                    name: 'tolerance',
-                    description: 'The number of joins to be considered spam',
-                    type: 4,
-                    required: true,
-                    min_value: 2,
-                },
-            ],
-        },
-        async execute(interaction: CommandInteraction<'cached'>) {
-            await handleSetSpamTolerance(interaction);
         },
         permissions: { modOnly: true },
     },

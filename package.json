@@ -12,6 +12,7 @@
         "mongoose": "^6.1.6",
         "sequelize": "^6.12.0-beta.1",
         "sqlite": "^4.0.23",
+        "string-progressbar": "^1.0.4",
         "typescript": "^4.5.4"
     },
     "devDependencies": {
