@@ -23,14 +23,14 @@ export function getCommands(commandObjects: CommandObject[]) {
 export async function deleteGlobalCommands(client: Client<true>) {
     await client.application.commands.set([]);
     log.info(
-        `Cleared all global commands for: ${client.application.name ?? client.application.id}`
+        `Cleared all global commands for: ${client.application.name ?? client.application.id}`,
     );
 }
 
 export async function setGuildCommands(
     slashCommands: CommandObject[],
     guild: Guild,
-    modIds: UserRoleGroup
+    modIds: UserRoleGroup,
 ) {
     await guild.commands.set([]);
     log.info(`Cleared all guild commands for: ${guild.name}`);
@@ -84,21 +84,21 @@ export async function resetCommandPermissions(guild: Guild) {
     });
 }
 
-export async function setupCommands(client: Client<true>, slashCommands: CommandObject[]) {
+export async function setupCommands(client: Client<true>, slashCommands: CommandObject[], useDB = true) {
     // await deleteGlobalCommands(client);
     log.debug('Fetching all guilds...');
     const partialGuilds = await client.guilds.fetch();
     log.debug(`Fetched ${partialGuilds.size} partial guilds.`);
     const guilds: Guild[] = [];
     for (const [, guild] of partialGuilds) {
-        const newGuild = await setupGuild(guild, slashCommands);
+        const newGuild = await setupGuild(guild, slashCommands, useDB);
         guilds.push(newGuild);
     }
     const commands = getCommands(slashCommands);
     return { guilds, commands };
 }
 
-export async function setupGuild(guild: OAuth2Guild | Guild, slashCommands: CommandObject[]) {
+export async function setupGuild(guild: OAuth2Guild | Guild, slashCommands: CommandObject[], useDB: boolean) {
     let fetchedGuild: Guild;
     if (guild instanceof OAuth2Guild) {
         fetchedGuild = await guild.fetch();
@@ -106,14 +106,18 @@ export async function setupGuild(guild: OAuth2Guild | Guild, slashCommands: Comm
         fetchedGuild = guild;
     }
     log.debug(`Fetched ${fetchedGuild.name}.`);
-    let targetGuild = await GuildModel.findOne({ guildId: guild.id });
-    if (!targetGuild) {
-        targetGuild = await defaultModel(fetchedGuild);
+    let targetGuild;
+    if (useDB) {
+        targetGuild = await GuildModel.findOne({ guildId: guild.id });
+        if (!targetGuild) {
+            targetGuild = await defaultModel(fetchedGuild);
+        }
     }
     await setGuildCommands(
         slashCommands,
         fetchedGuild,
-        UserRoleGroup.fromUserRoles(targetGuild.moderators)
+        targetGuild ? UserRoleGroup.fromUserRoles(targetGuild.moderators) : UserRoleGroup.defaultMod(fetchedGuild),
     );
+
     return fetchedGuild;
 }

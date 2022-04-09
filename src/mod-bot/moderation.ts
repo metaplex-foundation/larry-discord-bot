@@ -48,7 +48,7 @@ export async function handleCheckSpam(interaction: CommandInteraction<'cached'>)
         spamTolerance
     );
     const file = await makeResultsFile(infoObj);
-    interaction.editReply({
+    await interaction.editReply({
         embeds: [successEmbed.setDescription(`Found ${bold(totalSus.toString())} potential bots.`)],
         files: [file],
     });
@@ -57,15 +57,15 @@ export async function handleCheckSpam(interaction: CommandInteraction<'cached'>)
 
 function getQuestionableMembers(
     guildMembers: Collection<string, GuildMember>,
-    verifedRoleId: string | null,
+    verifiedRoleId: string | null,
     joinNumber: number
 ) {
     const joinMap = new Map<number, GuildMember[]>();
     const resultsMap = new Map<number, NeededInfo[]>();
     let totalSus = 0;
     for (const member of guildMembers.values()) {
-        if (verifedRoleId !== null) {
-            if (member.roles.cache.hasAny(...[verifedRoleId])) {
+        if (verifiedRoleId !== null) {
+            if (member.roles.cache.hasAny(...[verifiedRoleId])) {
                 continue;
             }
         }

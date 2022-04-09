@@ -25,6 +25,7 @@
     "scripts": {
         "prettier-format": "prettier --config .prettierrc 'src/**/*.ts' --write",
         "docs-bot": "ts-node src/docs-bot.ts",
-        "mod-bot": "ts-node src/mod-bot.ts"
+        "mod-bot": "ts-node src/mod-bot.ts",
+        "build": "tsc --build"
     }
 }

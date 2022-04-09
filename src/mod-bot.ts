@@ -1,6 +1,8 @@
 import { Guild, GuildMember, Interaction, Client, Intents } from 'discord.js';
 import {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     getCommands,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     setupCommands,
     setupGuild,
 } from './common/slash-commands';
@@ -37,8 +39,9 @@ client.once('ready', async () => {
 });
 
 async function main() {
-    if (!client.isReady()) throw new Error('Client isnt ready?');
+    if (!client.isReady()) throw new Error('Client isn\'t ready?');
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { guilds, commands } = await setupCommands(client, modCommands);
     // const commands = getCommands(modCommands);
     // return;
@@ -67,7 +70,7 @@ async function main() {
     });
 
     client.on('guildCreate', async (guild: Guild) => {
-        await setupGuild(guild, modCommands);
+        await setupGuild(guild, modCommands, true);
         log.info('Successfully setup new guild: ', guild.name);
     });
 

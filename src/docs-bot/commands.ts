@@ -1,6 +1,7 @@
 import { CommandInteraction } from 'discord.js';
 import { CommandObject } from '../types';
 import { algoliaResult, metaplexIndex, solanaIndex } from './handle-autocomplete';
+import { wtfIs } from './wtf-is';
 
 const slashCommands: CommandObject[] = [
     {
@@ -64,6 +65,31 @@ const slashCommands: CommandObject[] = [
         },
         async execute(interaction: CommandInteraction) {
             await algoliaResult(solanaIndex, interaction);
+        },
+        permissions: { modOnly: false },
+    },
+    {
+        data: {
+            name: 'wtf-is',
+            description: 'What specific Metaplex errors mean! Uses the wtf-is Rust crate under the hood.',
+            defaultPermission: true,
+            options: [
+                {
+                    name: 'code',
+                    description: 'The hex code to look for',
+                    type: 3,
+                    required: true,
+                },
+                {
+                    name: 'hidden',
+                    description: 'Only show the docs to you. True by default',
+                    type: 5,
+                    required: false,
+                },
+            ],
+        },
+        async execute(interaction: CommandInteraction) {
+            await wtfIs(interaction);
         },
         permissions: { modOnly: false },
     },

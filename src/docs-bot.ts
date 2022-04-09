@@ -24,18 +24,18 @@ client.login(process.env.DOCS_BOT_TOKEN);
 
 client.once('ready', async () => {
     log.info('Ready!');
-    log.info('Ready!');
-    const mongoUri = process.env.MOD_BOT_MONGO_URI;
-    if (mongoUri === undefined) {
-        throw new Error('Bad mongo env');
-    }
-    await connectDatabase(mongoUri);
+    // const mongoUri = process.env.MOD_BOT_MONGO_URI;
+    // if (mongoUri === undefined) {
+    //     throw new Error('Bad mongo env');
+    // }
+    // await connectDatabase(mongoUri);
     await main();
 });
 
 async function main() {
     if (!client.isReady()) return;
-    const { guilds, commands } = await setupCommands(client, docsCommands);
+    // noinspection JSUnusedLocalSymbols
+    const { guilds, commands } = await setupCommands(client, docsCommands, false);
     // const commands = getCommands(docsCommands);
     client.on('interactionCreate', async (interaction: Interaction) => {
         if (interaction.isAutocomplete()) {

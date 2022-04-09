@@ -23,13 +23,13 @@
 ## The Docs Bot: 
 The first bot allows you to hook into any Algolia DocSearch index and uses the interaction autocomplete functionality to make it easy for users to query documentation. 
 >TODO:
-> - [ ] Add funcitonality to store custom FAQs on a per server basis
+> - [ ] Add functionality to store custom FAQs on a per-server basis
 > - [ ] Convert the docs commands to a class and enable servers to deploy their own docs commands with an Algolia index and key 
 
 ---
 ## The Mod Bot:
 The mod bot does a number of things:
-- check members on join and compares their username to that of the moderation team of a server (configurable on a per server basis). If it matches, the user is immediately kicked and the team is alerted. 
+- check members on join and compares their username to that of the moderation team of a server (configurable on a per-server basis). If it matches, the user is immediately kicked and the team is alerted. 
 - get a list of probable bots in a server, and can perform bulk actions (kick/ban) on all of them.
 - A number of other helpful things.
 >TODO:

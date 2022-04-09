@@ -151,7 +151,7 @@ export async function algoliaResult(index: SearchIndex, interaction: Interaction
     const query = interaction.options.getString('query');
     const user = interaction.options.getUser('target');
     const hidden = interaction.options.getBoolean('hidden');
-    await interaction.deferReply({ ephemeral: hidden ? true : false });
+    await interaction.deferReply({ ephemeral: !!hidden });
     if (typeof query !== 'string') {
         const response = await interaction.editReply('Something went wrong');
         return;

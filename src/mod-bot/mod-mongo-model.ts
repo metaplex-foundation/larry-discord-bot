@@ -105,8 +105,8 @@ export class UserRoleGroup {
     protectedAdd(group: UserRoleGroup) {
         this.add(group);
         console.log(this.size());
-        if (this.size() > 10) return false;
-        return true;
+        return this.size() <= 10;
+
     }
 
     checkAdmin(guild: Guild) {
@@ -204,7 +204,7 @@ export async function updateMods(
     if (remove) {
         mods.protectedRemove(toModify, guild);
     } else {
-        if (mods.protectedAdd(toModify) === false) return false;
+        if (!mods.protectedAdd(toModify)) return false;
     }
     targetGuild.moderators = mods.toUserRoles();
     console.log('Mods: ', mods);

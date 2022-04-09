@@ -1,5 +1,4 @@
 import { CommandInteraction, MessageEmbed } from 'discord.js';
-import log from 'loglevel';
 import { resetCommandPermissions } from '../common/slash-commands';
 import {
     updateMods,

@@ -1,3 +1,5 @@
+// noinspection SpellCheckingInspection
+
 import { CommandInteraction } from 'discord.js';
 import log from 'loglevel';
 import { CommandObject } from '../types';
