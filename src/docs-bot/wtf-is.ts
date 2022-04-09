@@ -6,7 +6,7 @@ export async function wtfIs(interaction: CommandInteraction) {
     const query = interaction.options.getString('code', true);
     const hidden = interaction.options.getBoolean('hidden');
 
-    await interaction.deferReply({ ephemeral: hidden ?? true });
+    await interaction.deferReply({ ephemeral: hidden ?? false });
 
 
     const execFile = util.promisify(child_process.execFile);

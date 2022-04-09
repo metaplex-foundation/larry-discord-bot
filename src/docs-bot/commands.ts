@@ -82,7 +82,7 @@ const slashCommands: CommandObject[] = [
                 },
                 {
                     name: 'hidden',
-                    description: 'Only show the docs to you. True by default',
+                    description: 'Only show the error message to you',
                     type: 5,
                     required: false,
                 },
