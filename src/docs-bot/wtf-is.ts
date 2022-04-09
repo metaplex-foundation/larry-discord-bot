@@ -8,7 +8,8 @@ export async function wtfIs(interaction: CommandInteraction) {
 
     await interaction.deferReply({ ephemeral: hidden ?? false });
 
-
+    // Uses the `wtf-is` crate made by Sam Vanderwaal.
+    // https://crates.io/crates/wtf-is/0.3.0
     const execFile = util.promisify(child_process.execFile);
     const { stdout } = await execFile('wtf-is', [query]);
 
