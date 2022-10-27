@@ -6,7 +6,7 @@ export async function wtfIs(interaction: CommandInteraction) {
     const query = interaction.options.getString('code', true);
     const hidden = interaction.options.getBoolean('hidden');
 
-    await interaction.deferReply({ ephemeral: hidden ?? false });
+    await interaction.deferReply({ ephemeral: hidden ?? true });
 
     // Uses the `wtf-is` crate made by Sam Vanderwaal.
     // https://crates.io/crates/wtf-is/0.3.0
