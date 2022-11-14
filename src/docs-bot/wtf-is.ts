@@ -6,13 +6,18 @@ export async function wtfIs(interaction: CommandInteraction) {
     const query = interaction.options.getString('code', true);
     const hidden = interaction.options.getBoolean('hidden');
 
-    await interaction.deferReply({ ephemeral: hidden ?? false });
+    await interaction.deferReply({ ephemeral: hidden ?? true });
 
-    // Uses the `wtf-is` crate made by Sam Vanderwaal.
-    // https://crates.io/crates/wtf-is/0.3.0
-    const execFile = util.promisify(child_process.execFile);
-    const { stdout } = await execFile('wtf-is', [query]);
-
-    const message = `**Response from *wtf-is*:**\n${stdout}`;
+    let response;
+    try {
+        // Uses the `metaboss` crate made by Sam Vanderwaal.
+        // https://crates.io/crates/metaboss
+        const execFile = util.promisify(child_process.execFile);
+        const stdout = await (await execFile('metaboss', ['find','error',query])).stdout;
+        response = stdout.replace('Done!','')
+    } catch (e) {
+        response = `Error: Invalid Error Code ${query}`;
+    }
+    const message = `**Response from *metaboss find error*:**\n${response}`;
     await interaction.editReply(message);
 }

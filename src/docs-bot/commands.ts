@@ -71,7 +71,7 @@ const slashCommands: CommandObject[] = [
     {
         data: {
             name: 'wtf-is',
-            description: 'What specific Metaplex errors mean! Uses the wtf-is Rust crate under the hood.',
+            description: 'What specific Metaplex errors mean! Uses the metaboss Rust crate under the hood.',
             defaultPermission: true,
             options: [
                 {
