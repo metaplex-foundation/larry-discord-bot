@@ -91,8 +91,12 @@ export async function setupCommands(client: Client<true>, slashCommands: Command
     log.debug(`Fetched ${partialGuilds.size} partial guilds.`);
     const guilds: Guild[] = [];
     for (const [, guild] of partialGuilds) {
-        const newGuild = await setupGuild(guild, slashCommands, useDB);
-        guilds.push(newGuild);
+        try {
+            const newGuild = await setupGuild(guild, slashCommands, useDB);
+            guilds.push(newGuild);
+        } catch (err) {
+            log.error(`Failed to setup guild with name <${guild.name}> and id <${guild.id}>:`, err);
+        }
     }
     const commands = getCommands(slashCommands);
     return { guilds, commands };
