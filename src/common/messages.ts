@@ -1,37 +1,40 @@
 import {
+    ActionRowBuilder,
+    ButtonBuilder,
     ButtonInteraction,
+    ButtonStyle,
+    Colors,
     CommandInteraction,
-    MessageActionRow,
-    MessageButton,
-    MessageEmbed,
+    ComponentType,
+    EmbedBuilder,
 } from 'discord.js';
 
-const confirmButton = new MessageButton()
+const confirmButton = new ButtonBuilder()
     .setCustomId('confirm')
     .setLabel('Confirm')
-    .setStyle('SUCCESS');
+    .setStyle(ButtonStyle.Success);
 
-const cancelButton = new MessageButton()
+const cancelButton = new ButtonBuilder()
     .setCustomId('cancel')
     .setLabel('Cancel')
-    .setStyle('DANGER');
+    .setStyle(ButtonStyle.Danger);
 
-export const errorEmbed = new MessageEmbed().setColor('RED');
-export const successEmbed = new MessageEmbed().setColor('GREEN');
-export const pendingEmbed = new MessageEmbed().setColor('ORANGE');
-export const alertEmbed = new MessageEmbed().setColor('YELLOW');
+export const errorEmbed = new EmbedBuilder().setColor(Colors.Red);
+export const successEmbed = new EmbedBuilder().setColor(Colors.Green);
+export const pendingEmbed = new EmbedBuilder().setColor(Colors.Orange);
+export const alertEmbed = new EmbedBuilder().setColor(Colors.Yellow);
 
-export const countingEmbed = new MessageEmbed()
+export const countingEmbed = new EmbedBuilder()
     .setDescription('Counting members. Please wait...')
-    .setColor('ORANGE');
+    .setColor(Colors.Orange);
 
-export const cancelEmbed = new MessageEmbed()
+export const cancelEmbed = new EmbedBuilder()
     .setDescription(`Interaction cancelled.`)
-    .setColor('RED');
+    .setColor(Colors.Red);
 
 export async function doConfirmation(interaction: CommandInteraction<'cached'>, message: string) {
     const embed = pendingEmbed.setDescription(message);
-    const row = new MessageActionRow().addComponents(confirmButton, cancelButton);
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(confirmButton, cancelButton);
     await interaction.editReply({ embeds: [embed], components: [row] });
     const lastMessage = await interaction.fetchReply();
 
@@ -41,7 +44,7 @@ export async function doConfirmation(interaction: CommandInteraction<'cached'>, 
     };
     const click = await lastMessage.awaitMessageComponent({
         filter,
-        componentType: 'BUTTON',
+        componentType: ComponentType.Button,
         time: 15000,
     }).catch(() => false);
     if (typeof click === 'boolean') return false;

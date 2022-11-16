@@ -1,15 +1,25 @@
 // noinspection SpellCheckingInspection
 
-import { CommandInteraction } from 'discord.js';
-import log from 'loglevel';
-import { CommandObject } from '../types';
-import { handleCheckSpam, handleRemoveByJoinWindow, handleRemoveByName, handleRemoveByUser, handleRemoveSimilarJoins } from './moderation';
 import {
-    handleAddNameCheck,
+    ApplicationCommandOptionType,
+    ApplicationCommandType,
+    ChatInputCommandInteraction,
+    UserContextMenuCommandInteraction,
+} from 'discord.js';
+import { CommandObject } from '../types';
+import {
+    handleCheckSpam,
+    handleRemoveByJoinWindow,
+    handleRemoveByName,
+    handleRemoveByUser,
+    handleRemoveSimilarJoins,
+} from './moderation';
+import {
     handleAddBotMod,
+    handleAddNameCheck,
     handleLogPermissions,
-    handleRemoveNameCheck,
     handleRemoveBotMod,
+    handleRemoveNameCheck,
     handleReset,
     handleResetPermissions,
     handleSetLogChannel,
@@ -22,24 +32,24 @@ const slashCommands: CommandObject[] = [
         data: {
             name: 'removeby',
             description: 'Gets rid of pesky spam/scam bots',
-            defaultPermission: false,
+            defaultMemberPermissions: 0n,
             options: [
                 {
                     name: 'user',
-                    type: 1,
+                    type: ApplicationCommandOptionType.Subcommand,
                     description: 'Removes multiple spam bots by user',
                     options: [
                         {
                             name: 'user',
                             description: 'One of the scam/spam bots',
-                            type: 6,
+                            type: ApplicationCommandOptionType.User,
                             required: true,
                         },
                         {
                             name: 'range',
                             description:
                                 'Join time window to use in minutes, starting with the user',
-                            type: 4,
+                            type: ApplicationCommandOptionType.Integer,
                             required: true,
                             min_value: 1,
                             max_value: 60,
@@ -47,7 +57,7 @@ const slashCommands: CommandObject[] = [
                         {
                             name: 'method',
                             description: 'kick or ban (Default: kick)',
-                            type: 3,
+                            type: ApplicationCommandOptionType.String,
                             required: false,
                             choices: [
                                 { name: 'ban', value: 'ban' },
@@ -57,7 +67,7 @@ const slashCommands: CommandObject[] = [
                         {
                             name: 'verified',
                             description: 'Include members with the verified role',
-                            type: 5,
+                            type: ApplicationCommandOptionType.Boolean,
                             required: false,
                         },
                     ],
@@ -65,18 +75,18 @@ const slashCommands: CommandObject[] = [
                 {
                     name: 'name',
                     description: 'Removes users with matching names',
-                    type: 1,
+                    type: ApplicationCommandOptionType.Subcommand,
                     options: [
                         {
                             name: 'name',
                             description: 'The name to check',
-                            type: 3,
+                            type: ApplicationCommandOptionType.String,
                             required: true,
                         },
                         {
                             name: 'type',
                             description: 'Name match type (Default: includes)',
-                            type: 3,
+                            type: ApplicationCommandOptionType.String,
                             required: false,
                             choices: [
                                 { name: 'startswith', value: 'startswith' },
@@ -87,7 +97,7 @@ const slashCommands: CommandObject[] = [
                         {
                             name: 'method',
                             description: 'kick or ban (Default: kick)',
-                            type: 3,
+                            type: ApplicationCommandOptionType.String,
                             required: false,
                             choices: [
                                 { name: 'ban', value: 'ban' },
@@ -97,7 +107,7 @@ const slashCommands: CommandObject[] = [
                         {
                             name: 'verified',
                             description: 'Include members with the verified role',
-                            type: 5,
+                            type: ApplicationCommandOptionType.Boolean,
                             required: false,
                         },
                     ],
@@ -105,24 +115,24 @@ const slashCommands: CommandObject[] = [
                 {
                     name: 'joinwindow',
                     description: 'Remove bots that joined within a window',
-                    type: 1,
+                    type: ApplicationCommandOptionType.Subcommand,
                     options: [
                         {
                             name: 'first',
                             description: 'The start of the window',
-                            type: 6,
+                            type: ApplicationCommandOptionType.User,
                             required: true,
                         },
                         {
                             name: 'last',
                             description: 'The end of the window',
-                            type: 6,
+                            type: ApplicationCommandOptionType.User,
                             required: true,
                         },
                         {
                             name: 'method',
                             description: 'kick or ban (Default: kick)',
-                            type: 3,
+                            type: ApplicationCommandOptionType.String,
                             required: false,
                             choices: [
                                 { name: 'ban', value: 'ban' },
@@ -132,14 +142,14 @@ const slashCommands: CommandObject[] = [
                         {
                             name: 'verified',
                             description: 'Include members with the verified role',
-                            type: 5,
+                            type: ApplicationCommandOptionType.Boolean,
                             required: false,
                         },
                     ],
                 },
             ],
         },
-        async execute(interaction: CommandInteraction<'cached'>) {
+        async execute(interaction: ChatInputCommandInteraction<'cached'>) {
             switch (interaction.options.getSubcommand(true)) {
                 case 'user':
                     await handleRemoveByUser(interaction);
@@ -160,17 +170,17 @@ const slashCommands: CommandObject[] = [
         data: {
             name: 'set',
             description: 'Configures the settings for the guild',
-            defaultPermission: false,
+            defaultMemberPermissions: 0n,
             options: [
                 {
                     name: 'logchannel',
                     description: 'Sets the join spam log channel for the guild',
-                    type: 1,
+                    type: ApplicationCommandOptionType.Subcommand,
                     options: [
                         {
                             name: 'channel',
                             description: 'The channel to set',
-                            type: 7,
+                            type: ApplicationCommandOptionType.Channel,
                             required: true,
                             channel_types: [0],
                         },
@@ -179,12 +189,12 @@ const slashCommands: CommandObject[] = [
                 {
                     name: 'verifiedrole',
                     description: 'Sets the verified role for the guild',
-                    type: 1,
+                    type: ApplicationCommandOptionType.Subcommand,
                     options: [
                         {
                             name: 'role',
                             description: 'The role to set',
-                            type: 8,
+                            type: ApplicationCommandOptionType.Role,
                             required: true,
                         },
                     ],
@@ -192,12 +202,12 @@ const slashCommands: CommandObject[] = [
                 {
                     name: 'spamtolerance',
                     description: 'Sets the spam tolerance number for the guild',
-                    type: 1,
+                    type: ApplicationCommandOptionType.Subcommand,
                     options: [
                         {
                             name: 'tolerance',
                             description: 'The number of joins to be considered spam. Min: 2',
-                            type: 4,
+                            type: ApplicationCommandOptionType.Integer,
                             required: true,
                             min_value: 2,
                         },
@@ -205,7 +215,7 @@ const slashCommands: CommandObject[] = [
                 },
             ],
         },
-        async execute(interaction: CommandInteraction<'cached'>) {
+        async execute(interaction: ChatInputCommandInteraction<'cached'>) {
             switch (interaction.options.getSubcommand(true)) {
                 case 'logchannel':
                     await handleSetLogChannel(interaction);
@@ -224,23 +234,23 @@ const slashCommands: CommandObject[] = [
         data: {
             name: 'namecheck',
             description: 'Adds or removes a user or a role from the name check',
-            defaultPermission: false,
+            defaultMemberPermissions: 0n,
             options: [
                 {
                     name: 'add',
                     description: 'Adds a user or a role to the name check',
-                    type: 1,
+                    type: ApplicationCommandOptionType.Subcommand,
                     options: [
                         {
                             name: 'user',
                             description: 'The user to add',
-                            type: 6,
+                            type: ApplicationCommandOptionType.User,
                             required: false,
                         },
                         {
                             name: 'role',
                             description: 'The role to add',
-                            type: 8,
+                            type: ApplicationCommandOptionType.Role,
                             required: false,
                         },
                     ],
@@ -248,25 +258,25 @@ const slashCommands: CommandObject[] = [
                 {
                     name: 'remove',
                     description: 'Removes a user or a role from the name check',
-                    type: 1,
+                    type: ApplicationCommandOptionType.Subcommand,
                     options: [
                         {
                             name: 'user',
                             description: 'The user to remove',
-                            type: 6,
+                            type: ApplicationCommandOptionType.User,
                             required: false,
                         },
                         {
                             name: 'role',
                             description: 'The role to remove',
-                            type: 8,
+                            type: ApplicationCommandOptionType.Role,
                             required: false,
                         },
                     ],
                 },
             ],
         },
-        async execute(interaction: CommandInteraction<'cached'>) {
+        async execute(interaction: ChatInputCommandInteraction<'cached'>) {
             switch (interaction.options.getSubcommand(true)) {
                 case 'add':
                     await handleAddNameCheck(interaction);
@@ -282,23 +292,23 @@ const slashCommands: CommandObject[] = [
         data: {
             name: 'botmod',
             description: 'Adds or removes a user or a role from the bot moderator set',
-            defaultPermission: false,
+            defaultMemberPermissions: 0n,
             options: [
                 {
                     name: 'add',
                     description: 'Adds a user or a role to the bot moderator set',
-                    type: 1,
+                    type: ApplicationCommandOptionType.Subcommand,
                     options: [
                         {
                             name: 'user',
                             description: 'The user to add',
-                            type: 6,
+                            type: ApplicationCommandOptionType.User,
                             required: false,
                         },
                         {
                             name: 'role',
                             description: 'The role to add',
-                            type: 8,
+                            type: ApplicationCommandOptionType.Role,
                             required: false,
                         },
                     ],
@@ -306,25 +316,25 @@ const slashCommands: CommandObject[] = [
                 {
                     name: 'remove',
                     description: 'Removes a user or a role from the bot moderator set',
-                    type: 1,
+                    type: ApplicationCommandOptionType.Subcommand,
                     options: [
                         {
                             name: 'user',
                             description: 'The user to remove',
-                            type: 6,
+                            type: ApplicationCommandOptionType.User,
                             required: false,
                         },
                         {
                             name: 'role',
                             description: 'The role to remove',
-                            type: 8,
+                            type: ApplicationCommandOptionType.Role,
                             required: false,
                         },
                     ],
                 },
             ],
         },
-        async execute(interaction: CommandInteraction<'cached'>) {
+        async execute(interaction: ChatInputCommandInteraction<'cached'>) {
             switch (interaction.options.getSubcommand(true)) {
                 case 'add':
                     await handleAddBotMod(interaction);
@@ -340,21 +350,21 @@ const slashCommands: CommandObject[] = [
         data: {
             name: 'permissions',
             description: 'Manage botmod and namecheck permissions',
-            defaultPermission: false,
+            defaultMemberPermissions: 0n,
             options: [
                 {
                     name: 'log',
                     description: 'Logs the current mod and namecheck permissions',
-                    type: 1,
+                    type: ApplicationCommandOptionType.Subcommand,
                 },
                 {
                     name: 'reset',
                     description: 'Resets the mod and namecheck permissions for the guild',
-                    type: 1,
+                    type: ApplicationCommandOptionType.Subcommand,
                 },
             ],
         },
-        async execute(interaction: CommandInteraction<'cached'>) {
+        async execute(interaction: ChatInputCommandInteraction<'cached'>) {
             switch (interaction.options.getSubcommand(true)) {
                 case 'log':
                     await handleLogPermissions(interaction);
@@ -368,11 +378,11 @@ const slashCommands: CommandObject[] = [
     },
     {
         data: {
-            type: 2,
+            type: ApplicationCommandType.User,
             name: 'Kick Similar Joins',
-            defaultPermission: false,
+            defaultMemberPermissions: 0n,
         },
-        async execute(interaction: CommandInteraction<'cached'>) {
+        async execute(interaction: UserContextMenuCommandInteraction<'cached'>) {
             await handleRemoveSimilarJoins(interaction, 'kick');
         },
         permissions: {
@@ -381,11 +391,11 @@ const slashCommands: CommandObject[] = [
     },
     {
         data: {
-            type: 2,
+            type: ApplicationCommandType.User,
             name: 'Ban Similar Joins',
-            defaultPermission: false,
+            defaultMemberPermissions: 0n,
         },
-        async execute(interaction: CommandInteraction<'cached'>) {
+        async execute(interaction: UserContextMenuCommandInteraction<'cached'>) {
             await handleRemoveSimilarJoins(interaction, 'ban');
         },
         permissions: {
@@ -396,9 +406,9 @@ const slashCommands: CommandObject[] = [
         data: {
             name: 'checkspam',
             description: 'Bot spam? Not for long',
-            defaultPermission: false,
+            defaultMemberPermissions: 0n,
         },
-        async execute(interaction: CommandInteraction<'cached'>) {
+        async execute(interaction: ChatInputCommandInteraction<'cached'>) {
             await handleCheckSpam(interaction);
         },
         permissions: { modOnly: true },
@@ -407,9 +417,9 @@ const slashCommands: CommandObject[] = [
         data: {
             name: 'reset',
             description: 'Resets the state for the guild',
-            defaultPermission: false,
+            defaultMemberPermissions: 0n,
         },
-        async execute(interaction: CommandInteraction<'cached'>) {
+        async execute(interaction: ChatInputCommandInteraction<'cached'>) {
             await handleReset(interaction);
         },
         permissions: { modOnly: true },

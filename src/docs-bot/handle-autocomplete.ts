@@ -1,5 +1,10 @@
 import algoliasearch, { SearchIndex } from 'algoliasearch';
-import { ApplicationCommandOptionChoice, AutocompleteInteraction, Interaction } from 'discord.js';
+import {
+    APIApplicationCommandOptionChoice,
+    AutocompleteInteraction,
+    CommandInteraction,
+    Interaction,
+} from 'discord.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -54,7 +59,7 @@ export async function handleAutoComplete(interaction: AutocompleteInteraction) {
                 //     const response = await interaction.respond([]);
                 //     return;
             } else if (checkLastUserOptions(query, user.id).isSame) {
-                const result: ApplicationCommandOptionChoice = {
+                const result: APIApplicationCommandOptionChoice = {
                     name: query,
                     value: query,
                 };
@@ -66,9 +71,9 @@ export async function handleAutoComplete(interaction: AutocompleteInteraction) {
                 COMMAND_TO_INDEX_MAP[commandName]
             );
             lastUserOptions.set(user.id, algoliaResponse);
-            const newResponses: ApplicationCommandOptionChoice[] = algoliaResponse.combined.map(
+            const newResponses: APIApplicationCommandOptionChoice[] = algoliaResponse.combined.map(
                 (choice) => {
-                    const result: ApplicationCommandOptionChoice = {
+                    const result: APIApplicationCommandOptionChoice = {
                         name: choice,
                         value: choice,
                     };
@@ -146,8 +151,8 @@ export async function getAlgoliaResponse(
     return { responses, lvl0s, links, combined };
 }
 
-export async function algoliaResult(index: SearchIndex, interaction: Interaction) {
-    if (!interaction.isCommand()) return;
+export async function algoliaResult(index: SearchIndex, interaction: CommandInteraction) {
+    if (!interaction.isChatInputCommand()) return;
     const query = interaction.options.getString('query');
     const user = interaction.options.getUser('target');
     const hidden = interaction.options.getBoolean('hidden');

@@ -1,4 +1,4 @@
-import { Guild, GuildMember, Interaction, Client, Intents } from 'discord.js';
+import { Guild, GuildMember, Interaction, Client, GatewayIntentBits } from 'discord.js';
 import {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     getCommands,
@@ -22,7 +22,7 @@ process.on('unhandledRejection', (error) => {
 
 // Create a new discord client
 const client = new Client({
-    intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MEMBERS],
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
 });
 
 client.login(process.env.MOD_BOT_TOKEN);
@@ -70,7 +70,7 @@ async function main() {
     });
 
     client.on('guildCreate', async (guild: Guild) => {
-        await setupGuild(guild, modCommands, true);
+        await setupGuild(guild, modCommands, true, false);
         log.info('Successfully setup new guild: ', guild.name);
     });
 

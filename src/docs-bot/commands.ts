@@ -1,4 +1,9 @@
-import { CommandInteraction } from 'discord.js';
+import {
+    ApplicationCommandOptionType,
+    ChatInputCommandInteraction,
+    CommandInteraction,
+    PermissionFlagsBits,
+} from 'discord.js';
 import { CommandObject } from '../types';
 import { algoliaResult, metaplexIndex, solanaIndex } from './handle-autocomplete';
 import { wtfIs } from './wtf-is';
@@ -8,30 +13,30 @@ const slashCommands: CommandObject[] = [
         data: {
             name: 'docs',
             description: 'Fetches the Metaplex Docs',
-            defaultPermission: true,
+            defaultMemberPermissions: PermissionFlagsBits.SendMessages,
             options: [
                 {
                     name: 'query',
                     description: 'Phrase to search for',
-                    type: 3,
+                    type: ApplicationCommandOptionType.String,
                     required: true,
                     autocomplete: true,
                 },
                 {
                     name: 'target',
                     description: 'User to mention',
-                    type: 6,
+                    type: ApplicationCommandOptionType.User,
                     required: false,
                 },
                 {
                     name: 'hidden',
                     description: 'Only show the docs to you',
-                    type: 5,
+                    type: ApplicationCommandOptionType.Boolean,
                     required: false,
                 },
             ],
         },
-        async execute(interaction: CommandInteraction) {
+        async execute(interaction: ChatInputCommandInteraction) {
             await algoliaResult(metaplexIndex, interaction);
         },
         permissions: { modOnly: false },
@@ -40,30 +45,30 @@ const slashCommands: CommandObject[] = [
         data: {
             name: 'soldocs',
             description: 'Fetches the Solana Docs',
-            defaultPermission: true,
+            defaultMemberPermissions: PermissionFlagsBits.SendMessages,
             options: [
                 {
                     name: 'query',
                     description: 'Phrase to search for',
-                    type: 3,
+                    type: ApplicationCommandOptionType.String,
                     required: true,
                     autocomplete: true,
                 },
                 {
                     name: 'target',
                     description: 'User to mention',
-                    type: 6,
+                    type: ApplicationCommandOptionType.User,
                     required: false,
                 },
                 {
                     name: 'hidden',
                     description: 'Only show the docs to you',
-                    type: 5,
+                    type: ApplicationCommandOptionType.Boolean,
                     required: false,
                 },
             ],
         },
-        async execute(interaction: CommandInteraction) {
+        async execute(interaction: ChatInputCommandInteraction) {
             await algoliaResult(solanaIndex, interaction);
         },
         permissions: { modOnly: false },
@@ -72,18 +77,18 @@ const slashCommands: CommandObject[] = [
         data: {
             name: 'wtf-is',
             description: 'What specific Metaplex errors mean! Uses the metaboss Rust crate under the hood.',
-            defaultPermission: true,
+            defaultMemberPermissions: PermissionFlagsBits.SendMessages,
             options: [
                 {
                     name: 'code',
                     description: 'The hex code to look for',
-                    type: 3,
+                    type: ApplicationCommandOptionType.String,
                     required: true,
                 },
                 {
                     name: 'hidden',
                     description: 'Only show the error message to you',
-                    type: 5,
+                    type: ApplicationCommandOptionType.Boolean,
                     required: false,
                 },
             ],
