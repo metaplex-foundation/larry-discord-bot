@@ -1,9 +1,9 @@
 import {
-    ApplicationCommandPermissionData,
+    ApplicationCommandPermissions,
     Client,
     Collection,
     Guild,
-    GuildApplicationCommandPermissionData,
+    APIGuildApplicationCommandPermissions,
     OAuth2Guild,
 } from 'discord.js';
 import { CommandObject } from '../types';
@@ -84,7 +84,7 @@ export async function resetCommandPermissions(guild: Guild) {
     });
 }
 
-export async function setupCommands(client: Client<true>, slashCommands: CommandObject[], useDB = true) {
+export async function setupCommands(client: Client<true>, slashCommands: CommandObject[], useDB = true, globalCommands = false) {
     // await deleteGlobalCommands(client);
     log.debug('Fetching all guilds...');
     const partialGuilds = await client.guilds.fetch();
@@ -92,7 +92,7 @@ export async function setupCommands(client: Client<true>, slashCommands: Command
     const guilds: Guild[] = [];
     for (const [, guild] of partialGuilds) {
         try {
-            const newGuild = await setupGuild(guild, slashCommands, useDB);
+            const newGuild = await setupGuild(guild, slashCommands, useDB, globalCommands);
             guilds.push(newGuild);
         } catch (err) {
             log.error(`Failed to setup guild with name <${guild.name}> and id <${guild.id}>:`, err);
@@ -102,7 +102,7 @@ export async function setupCommands(client: Client<true>, slashCommands: Command
     return { guilds, commands };
 }
 
-export async function setupGuild(guild: OAuth2Guild | Guild, slashCommands: CommandObject[], useDB: boolean) {
+export async function setupGuild(guild: OAuth2Guild | Guild, slashCommands: CommandObject[], useDB: boolean, globalCommands: boolean) {
     let fetchedGuild: Guild;
     if (guild instanceof OAuth2Guild) {
         fetchedGuild = await guild.fetch();

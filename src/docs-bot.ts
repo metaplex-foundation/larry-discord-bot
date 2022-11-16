@@ -1,5 +1,5 @@
 import { handleAutoComplete } from './docs-bot/handle-autocomplete';
-import { Interaction, Client, Intents } from 'discord.js';
+import { Interaction, Client, GatewayIntentBits } from 'discord.js';
 import { getCommands, setupCommands } from './common/slash-commands';
 import docsCommands from './docs-bot/commands';
 import log from 'loglevel';
@@ -16,7 +16,7 @@ process.on('unhandledRejection', (error) => {
 
 // Create a new discord client
 const client = new Client({
-    intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MEMBERS],
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
 });
 
 // When the client is ready, run this code (only once)
@@ -33,9 +33,10 @@ client.once('ready', async () => {
 });
 
 async function main() {
+    const globalCommands = process.env.DOCS_BOT_GLOBAL_COMMANDS === 'true';
     if (!client.isReady()) return;
     // noinspection JSUnusedLocalSymbols
-    const { guilds, commands } = await setupCommands(client, docsCommands, false);
+    const { guilds, commands } = await setupCommands(client, docsCommands, false, globalCommands);
     // const commands = getCommands(docsCommands);
     client.on('interactionCreate', async (interaction: Interaction) => {
         if (interaction.isAutocomplete()) {
